@@ -1,0 +1,450 @@
+#path: C:/Users/ninac/OneDrive - University of South Carolina/Documents/R Studio Documents/MSCI399/MSCI399_SBB_Top_Boxplots_2.R
+
+#sbb_top_2 <-SBB_Top_Boxplots_umoles
+
+sbb_top_boxplots = read.csv(("data/CSV_files/SBB_Top_Boxplots_moles.csv"), header = TRUE, sep = ",")
+sbb_top_boxplots  
+
+library(ggplot2)
+library(lubridate)
+library(tidyverse)   # tidyverse (allows the gaps in data)
+library(carData)     # cardata (helps clean data)
+library(gridBase)    # gridbase
+library(gridExtra)   # gridextra
+library(patchwork)   # patchwork
+library(dplyr)       #allows r to process data more easily
+# these last three work together. Can plot multiple  graphs on one page
+
+
+# this line of code takes the Date_Open column and performs the function as date which just makes sure that it's formatted correctly). then it puts it back into the Date_Open Column
+sbb_top_boxplots$Date_Open <-as.Date(sbb_top_boxplots$Date_Open)
+
+#sbb_top <- sbb_top %>%
+#mutate(
+# month = month(Date_Open),
+#year = year(Date_Open))
+
+
+#extracts all the months from the Date_Open column as a two digit string and stores it in a new column called month
+sbb_top_boxplots$month <- format(sbb_top_boxplots$Date_Open,"%m")
+
+#extracts all the years from the Date_Open column as a two digit string and stores it in a new column called year. 
+# use a capital Y to convert to a 4 digit year rather than just a 2 digit year
+sbb_top_boxplots$year <- format(sbb_top_boxplots$Date_Open,"%y")
+
+
+#this line removes missing dates: if rows with missing dates aren't essential, you can remove them with filter (), 
+#This code removes all rows from sbb_top_boxplots where the Date_Open column has missing values, ensuring that the dataset contains only rows with valid dates.
+
+# note: the rows went from 353 to 333 meaning 20 rows did not have a date filled out. (this is likely because we have traps where the date got skipped because of clogs and such or because an extra row was added for visual clarify).
+
+sbb_top_boxplots <- sbb_top_boxplots %>% filter(!is.na(Date_Open))
+
+#I just wrote these next three lines to call the information so I could visualize it in the console.
+sbb_top_boxplots$Date_Open
+sbb_top_boxplots$month
+sbb_top_boxplots$year
+
+#this code below calculates the monthly average of a variable (ex: total mass flux) and prepares it for plotting. 
+
+# %>% is a pipe operator form the dplyr package that passes the dataframe sbb_top_boxplots to the next part of the code. 
+
+# group_by(month) groups the data in the sbb_top_boxplots dataframe and groups it based on month. 
+
+# summarise creates a summary statistic for each group. in this case we calcualte a new column in this example called "Avg_Total_Flux_sbb_top to hold the average of the Total_Mass_Flux_g_m2_day values. 
+
+# finally mean() computes the averages of the Total_Mass_Flux_g_m2_day values for each month and na.omit omits missing values so it doesn't affect the mean calculation. 
+
+# this is repeated for all 9 parameters and then again for yearly averages.
+
+massflux_monthlyavg_sbb_top <- sbb_top_boxplots%>% 
+  group_by(month) %>% 
+  summarise (Avg_Total_Mass_Flux_g_m2_day_sbb_top = mean(na.omit(Total_Mass_Flux_g_m2_day)))
+
+terigflux_monthlyavg_sbb_top <- sbb_top_boxplots%>% 
+  group_by(month) %>% 
+  summarise (Avg_Terrig_Flux_g_m2_da_sbb_top = mean(na.omit(Terrigenous_Flux_g_m2_day)))
+
+PONflux_monthlyavg_sbb_top <- sbb_top_boxplots%>% 
+  group_by(month) %>% 
+  summarise (Avg_PON_Flux_mmoles_m2_day_sbb_top = mean(na.omit(PON_Flux_mmoles_m2_day)))
+
+POCflux_monthlyavg_sbb_top <- sbb_top_boxplots%>% 
+  group_by(month) %>% 
+  summarise (Avg_POC_Flux_mmoles_m2_day_sbb_top = mean(na.omit(POC_Flux_mmoles_m2_day)))
+
+CaCO3flux_monthlyavg_sbb_top <- sbb_top_boxplots%>% 
+  group_by(month) %>% 
+  summarise (Avg_CaCO3_Flux_mmoles_m2_day_sbb_top = mean(na.omit(CaCO3_Flux_mmoles_m2_day)))
+
+Opalflux_monthlyavg_sbb_top <- sbb_top_boxplots%>% 
+  group_by(month) %>% 
+  summarise (Avg_Opal_Flux_mmoles_m2_day_sbb_top = mean(na.omit(OPAL_Flux_mmoles_m2_day)))
+
+TPPflux_monthlyavg_sbb_top <- sbb_top_boxplots%>% 
+  group_by(month) %>% 
+  summarise (Avg_TPP_Flux_umolesP_m2_day_sbb_top = mean(na.omit(TPP_Flux_umolesP_m2_day)))
+
+PIPflux_monthlyavg_sbb_top <- sbb_top_boxplots%>% 
+  group_by(month) %>% 
+  summarise (Avg_PIP_Flux_umolesP_m2_day_sbb_top = mean(na.omit(PIP_Flux_umolesP_m2_day)))
+
+POPflux_monthlyavg_sbb_top <- sbb_top_boxplots%>% 
+  group_by(month) %>% 
+  summarise (Avg_POP_Flux_umolesP_m2_day_sbb_top = mean(na.omit(POP_Flux_umolesP_m2_day)))
+
+#################
+
+# this is the same by groups by year to find yearly average
+
+massflux_yearlyavg_sbb_top <- sbb_top_boxplots%>% 
+  group_by(year) %>% 
+  summarise (Avg_Total_Mass_Flux_g_m2_day_sbb_top = mean(na.omit(Total_Mass_Flux_g_m2_day)))
+
+terigflux_yearlyavg_sbb_top <- sbb_top_boxplots%>% 
+  group_by(year) %>% 
+  summarise (Avg_Terrig_Flux_g_m2_day_sbb_top = mean(na.omit(Terrigenous_Flux_g_m2_day)))
+
+PONflux_yearlyavg_sbb_top <- sbb_top_boxplots%>% 
+  group_by(year) %>% 
+  summarise (Avg_PON_Flux_mmoles_m2_day_sbb_top = mean(na.omit(PON_Flux_mmoles_m2_day)))
+
+POCflux_yearlyavg_sbb_top <- sbb_top_boxplots%>% 
+  group_by(year) %>% 
+  summarise (Avg_POC_Flux_mmoles_m2_day_sbb_top = mean(na.omit(POC_Flux_mmoles_m2_day)))
+
+CaCO3flux_yearlyavg_sbb_top <- sbb_top_boxplots%>% 
+  group_by(year) %>% 
+  summarise (Avg_CaCO3_Flux_mmoles_m2_day_sbb_top = mean(na.omit(CaCO3_Flux_mmoles_m2_day)))
+
+Opalflux_yearlyavg_sbb_top <- sbb_top_boxplots%>% 
+  group_by(year) %>% 
+  summarise (Avg_Opal_Flux_mmoles_m2_day_sbb_top = mean(na.omit(OPAL_Flux_mmoles_m2_day)))
+
+TPPflux_yearlyavg_sbb_top <-sbb_top_boxplots%>% 
+  group_by(year) %>% 
+  summarise (Avg_TPP_Flux_umolesP_m2_day_sbb_top = mean(na.omit(TPP_Flux_umolesP_m2_day)))
+
+PIPflux_yearlyavg_sbb_top <- sbb_top_boxplots%>% 
+  group_by(year) %>% 
+  summarise (Avg_PIP_Flux_umolesP_m2_day_sbb_top = mean(na.omit(PIP_Flux_umolesP_m2_day)))
+
+POPflux_yearlyavg_sbb_top <- sbb_top_boxplots%>% 
+  group_by(year) %>% 
+  summarise (Avg_POP_Flux_umolesP_m2_day_sbb_top = mean(na.omit(POP_Flux_umolesP_m2_day)))
+
+
+###################
+#str(sbb_top_boxplots)
+#class(month)
+
+plot_a <- ggplot(sbb_top_boxplots, aes(x = month, y = Total_Mass_Flux_g_m2_day)) +
+  geom_boxplot() +
+  stat_summary(fun = mean, geom = "point", shape = 21, size = 2, fill = "red") +
+  stat_summary(fun.data = mean_cl_normal, geom = "errorbar", width = 0.2, color = "black") +
+  labs(x = "Month", y = "Total Mass Flux (g/m^2/day)") +  scale_y_continuous(labels = scales::comma)+
+  ggtitle("SBB Top: Monthly Average of Total Mass Flux")
+
+plot_b <- ggplot(sbb_top_boxplots, aes(x = month, y = Terrigenous_Flux_g_m2_day)) +
+  geom_boxplot() +
+  stat_summary(fun = mean, geom = "point", shape = 21, size = 2, fill = "red") +
+  stat_summary(fun.data = mean_cl_normal, geom = "errorbar", width = 0.2, color = "black") +
+  labs(x = "Month", y = "Terrigenous Flux (g/m^2/day)") +  scale_y_continuous(labels = scales::comma)+
+  ggtitle("SBB Top: Monthly Average of Terrigenous Flux")
+
+plot_c <- ggplot(sbb_top_boxplots, aes(x = month, y = PON_Flux_mmoles_m2_day)) +
+  geom_boxplot() +
+  stat_summary(fun = mean, geom = "point", shape = 21, size = 2, fill = "red") +
+  stat_summary(fun.data = mean_cl_normal, geom = "errorbar", width = 0.2, color = "black") +
+  labs(x = "Month", y = "PON Flux (mmoles/m^2/day)") +  scale_y_continuous(labels = scales::comma)+
+  ggtitle("SBB Top: Monthly Average of PON Flux")
+
+plot_d <- ggplot(sbb_top_boxplots, aes(x = month, y = POC_Flux_mmoles_m2_day)) +
+  geom_boxplot() +
+  stat_summary(fun = mean, geom = "point", shape = 21, size = 2, fill = "red") +
+  stat_summary(fun.data = mean_cl_normal, geom = "errorbar", width = 0.2, color = "black") +
+  labs(x = "Month", y = "POC Flux (mmoles/m^2/day)") +  scale_y_continuous(labels = scales::comma)+
+  ggtitle("SBB Top: Monthly Average of POC Flux")
+
+plot_e <- ggplot(sbb_top_boxplots, aes(x = month, y = CaCO3_Flux_mmoles_m2_day)) +
+  geom_boxplot() +
+  stat_summary(fun = mean, geom = "point", shape = 21, size = 2, fill = "red") +
+  stat_summary(fun.data = mean_cl_normal, geom = "errorbar", width = 0.2, color = "black") +
+  labs(x = "Month", y = "CaCO3 Flux (mmoles/m^2)/day") +  scale_y_continuous(labels = scales::comma)+
+  ggtitle("SBB Top: Monthly Average of CaCO3 Flux")
+
+plot_f <- ggplot(sbb_top_boxplots, aes(x = month, y = OPAL_Flux_mmoles_m2_day)) +
+  geom_boxplot() +
+  stat_summary(fun = mean, geom = "point", shape = 21, size = 2, fill = "red") +
+  stat_summary(fun.data = mean_cl_normal, geom = "errorbar", width = 0.2, color = "black") +
+  labs(x = "Month", y = "Opal Flux (mmoles/m^2/day)") +  scale_y_continuous(labels = scales::comma)+
+  ggtitle("SBB Top: Monthly Average of Opal Flux")
+
+plot_g <- ggplot(sbb_top_boxplots, aes(x = month, y = TPP_Flux_umolesP_m2_day)) +
+  geom_boxplot() +
+  stat_summary(fun = mean, geom = "point", shape = 21, size = 2, fill = "red") +
+  stat_summary(fun.data = mean_cl_normal, geom = "errorbar", width = 0.2, color = "black") +
+  labs(x = "Month", y = "TPP Flux (umoles/m^2/day)") +  scale_y_continuous(labels = scales::comma)+
+  ggtitle("SBB Top: Monthly Average of TPP Flux")
+
+plot_h <- ggplot(sbb_top_boxplots, aes(x = month, y = PIP_Flux_umolesP_m2_day)) +
+  geom_boxplot() +
+  stat_summary(fun = mean, geom = "point", shape = 21, size = 2, fill = "red") +
+  stat_summary(fun.data = mean_cl_normal, geom = "errorbar", width = 0.2, color = "black") +
+  labs(x = "Month", y = "PIP Flux (umoles/m^2/day)") +  scale_y_continuous(labels = scales::comma)+
+  ggtitle("SBB Top: Monthly Average of PIP Flux")
+
+plot_i <- ggplot(data = sbb_top_boxplots, aes(x = month, y = POP_Flux_umolesP_m2_day)) +
+  geom_boxplot() +
+  stat_summary(fun = mean, geom = "point", shape = 21, size = 2, fill = "red") +
+  stat_summary(fun.data = mean_cl_normal, geom = "errorbar", width = 0.2, color = "black") +
+  labs(x = "Month", y = "POP Flux (umoles/m^2/day)") +  scale_y_continuous(labels = scales::comma)+
+  ggtitle("SBB Top: Monthly Average of POP Flux")
+
+###################
+
+plot_j <- ggplot(sbb_top_boxplots, aes(x = year, y = Total_Mass_Flux_g_m2_day)) +
+  geom_boxplot() +
+  stat_summary(fun = mean, geom = "point", shape = 21, size = 2, fill = "red") +
+  stat_summary(fun.data = mean_cl_normal, geom = "errorbar", width = 0.2, color = "black") +
+  labs(x = "Year", y = "Total Mass Flux (g/m^2/day)") + scale_y_continuous(labels = scales::comma)+
+  ggtitle("SBB Top: Yearly Average of Total Mass Flux")
+
+plot_k <- ggplot(sbb_top_boxplots, aes(x = year, y = Terrigenous_Flux_g_m2_day)) +
+  geom_boxplot() +
+  stat_summary(fun = mean, geom = "point", shape = 21, size = 2, fill = "red") +
+  stat_summary(fun.data = mean_cl_normal, geom = "errorbar", width = 0.2, color = "black") +
+  labs(x = "Year", y = "Terrigenous Flux (g/m^2/day)") + scale_y_continuous(labels = scales::comma)+
+  ggtitle("SBB Top: Yearly Average of Terrigenous Flux")
+
+plot_l <- ggplot(sbb_top_boxplots, aes(x = year, y = PON_Flux_mmoles_m2_day)) +
+  geom_boxplot() +
+  stat_summary(fun = mean, geom = "point", shape = 21, size = 2, fill = "red") +
+  stat_summary(fun.data = mean_cl_normal, geom = "errorbar", width = 0.2, color = "black") +
+  labs(x = "Year", y = "PON Flux (mmoles/m^2/day)") + scale_y_continuous(labels = scales::comma)+
+  ggtitle("SBB Top: Yearly Average of PON Flux")
+
+plot_m <- ggplot(sbb_top_boxplots, aes(x = year, y = POC_Flux_mmoles_m2_day)) +
+  geom_boxplot() +
+  stat_summary(fun = mean, geom = "point", shape = 21, size = 2, fill = "red") +
+  stat_summary(fun.data = mean_cl_normal, geom = "errorbar", width = 0.2, color = "black") +
+  labs(x = "Year", y = "POC Flux (mmoles/m^2/day)") + scale_y_continuous(labels = scales::comma)+
+  ggtitle("SBB Top: Yearly Average of POC Flux")
+
+plot_n <- ggplot(sbb_top_boxplots, aes(x = year, y = CaCO3_Flux_mmoles_m2_day)) +
+  geom_boxplot() +
+  stat_summary(fun = mean, geom = "point", shape = 21, size = 2, fill = "red") +
+  stat_summary(fun.data = mean_cl_normal, geom = "errorbar", width = 0.2, color = "black") +
+  labs(x = "Year", y = "CaCO3 Flux (mmoles/m^2/day)") + scale_y_continuous(labels = scales::comma)+
+  ggtitle("SBB Top: Yearly Average of CaCO3 Flux")
+
+plot_o <- ggplot(sbb_top_boxplots, aes(x = year, y = OPAL_Flux_mmoles_m2_day)) +
+  geom_boxplot() +
+  stat_summary(fun = mean, geom = "point", shape = 21, size = 2, fill = "red") +
+  stat_summary(fun.data = mean_cl_normal, geom = "errorbar", width = 0.2, color = "black") +
+  labs(x = "Year", y = "Opal Flux (mmoles/m^2/day)") + scale_y_continuous(labels = scales::comma)+
+  ggtitle("SBB Top: Yearly Average of Opal Flux")
+
+plot_p <- ggplot(sbb_top_boxplots, aes(x = year, y = TPP_Flux_umolesP_m2_day)) +
+  geom_boxplot() +
+  stat_summary(fun = mean, geom = "point", shape = 21, size = 2, fill = "red") +
+  stat_summary(fun.data = mean_cl_normal, geom = "errorbar", width = 0.2, color = "black") +
+  labs(x = "Year", y = "TPP Flux (umoles/m^2/day)") + scale_y_continuous(labels = scales::comma)+
+  ggtitle("SBB Top: Yearly Average of TPP Flux")
+
+plot_q <- ggplot(sbb_top_boxplots, aes(x = year, y = PIP_Flux_umolesP_m2_day)) +
+  geom_boxplot() +
+  stat_summary(fun = mean, geom = "point", shape = 21, size = 2, fill = "red") +
+  stat_summary(fun.data = mean_cl_normal, geom = "errorbar", width = 0.2, color = "black") +
+  labs(x = "Year", y = "PIP Flux (umoles/m^2/day)") + scale_y_continuous(labels = scales::comma)+
+  ggtitle("SBB Top: Yearly Average of PIP Flux")
+
+plot_r <- ggplot(sbb_top_boxplots, aes(x = year, y = POP_Flux_umolesP_m2_day)) +
+  geom_boxplot() +
+  stat_summary(fun = mean, geom = "point", shape = 21, size = 2, fill = "red") +
+  stat_summary(fun.data = mean_cl_normal, geom = "errorbar", width = 0.2, color = "black") +
+  labs(x = "Year", y = "POP Flux (umoles/m^2/day)") + scale_y_continuous(labels = scales::comma)+
+  ggtitle("SBB Top: Yearly Average of POP Flux")
+
+######
+# Question 1: what is the red point? --> mean, thick line = median
+# Question 2: the sd is different than the quartile lines??
+# Question 3: how to get rid of N/A after 2024 and month 12
+# Question 4: is removed rows okay? "Removed 53 rows containing non-finite outside the scale range (`stat_boxplot()`)."
+# Question 5: putting them all together
+# Question 6: why is there a value for NA
+
+#class(plota)
+
+sbbtop_plot_a_to_f = grid.arrange(plot_a,plot_b,plot_c,plot_d,plot_e,plot_f, nrow = 2,ncol = 3)
+print(sbbtop_plot_a_to_f)
+
+sbbtop_plot_ghi= grid.arrange(plot_g,plot_h,plot_i, nrow=1,ncol=3)
+sbbtop_plot_ghi
+
+
+plot_a_b = grid.arrange(plot_a,plot_b, nrow=2,ncol=1)
+plot_a_b
+
+plot_c_d = grid.arrange(plot_c,plot_d, nrow=2,ncol=1)
+plot_c_d
+
+plot_e_f = grid.arrange(plot_e,plot_f, nrow=2,ncol=1)
+plot_e_f
+
+plot_g_h = grid.arrange(plot_g,plot_h, nrow=2,ncol=1)
+
+plot_i = grid.arrange(plot_i,nrow=1,ncol=1)
+
+
+ggsave("figures/SBBTop_Monthly_Total_Terrig.pdf", plot = plot_a_b, width = 10, height = 8)
+ggsave("figures/SBBTop_Monthly_PON_POC.pdf", plot = plot_c_d, width = 10, height = 8)
+ggsave("figures/SBBTop_Monthly_Carbonate_Opal.pdf", plot = plot_e_f, width = 10, height = 8)
+ggsave("figures/SBBTop_Monthly_TPP_PIP.pdf", plot = plot_g_h, width = 10, height = 8)
+ggsave("figures/SBBTop_Monthly_POP.pdf", plot = plot_i, width = 10, height = 8)
+
+##
+
+#grid.arrange(plot_a,plot_b,plot_c, nrow=1,ncol=3)
+#plotall_ac <- plot_a+plot_b+plot_c
+#plotall_ac
+
+#grid.arrange(plot_d, plot_e,plot_f, nrow=1,ncol=3)
+#plotall_ae <- plot_d+plot_e+plot_f
+#plotall_ae
+
+sbbtop_plot_j_to_o = grid.arrange(plot_j,plot_k,plot_l,plot_m, plot_n,plot_o, nrow=2,ncol=3)
+sbbbot_plot_j_to_o
+
+sbbtop_plot_pqr = grid.arrange(plot_p,plot_q,plot_r, nrow=1,ncol=3)
+sbbtop_plot_pqr
+
+
+################
+
+plot_j_k = grid.arrange(plot_j,plot_k, nrow=2,ncol=1)
+plot_j_k
+
+plot_l_m = grid.arrange(plot_l,plot_m, nrow=2,ncol=1)
+plot_l_m
+
+plot_n_o = grid.arrange(plot_n,plot_o, nrow=2,ncol=1)
+plot_n_o
+
+plot_p_q = grid.arrange(plot_p,plot_q, nrow=2,ncol=1)
+plot_p_q
+
+plot_r = grid.arrange(plot_r,nrow=1,ncol=1)
+plot_r
+
+ggsave("figures/SBBTop_Yearly_Total_Terrig.pdf", plot = plot_j_k, width = 10, height = 8)
+ggsave("figures/SBBTop_Yearly_PON_POC.pdf", plot = plot_l_m, width = 10, height = 8)
+ggsave("figures/SBBTop_Yearly_Carbonate_Opal.pdf", plot = plot_n_o, width = 10, height = 8)
+ggsave("figures/SBBTop_Yearly_TPP_PIP.pdf", plot = plot_p_q, width = 10, height = 8)
+ggsave("figures/SBBTop_Yearly_POP.pdf", plot = plot_r, width = 10, height = 8)
+
+#################
+
+# Experimenting with Time Series of Total Mass Flux
+
+#library(ggplot2)
+#library(dplyr)
+
+# Identify outliers using IQR method
+sbb_top_boxplots <- sbb_top_boxplots %>%
+  mutate(Q1 = quantile(Total_Mass_Flux_g_m2_day, 0.25, na.rm = TRUE),
+         Q3 = quantile(Total_Mass_Flux_g_m2_day, 0.75, na.rm = TRUE),
+         IQR = Q3 - Q1,
+         is_outlier = Total_Mass_Flux_g_m2_day < (Q1 - 1.5 * IQR) |
+           Total_Mass_Flux_g_m2_day > (Q3 + 1.5 * IQR))
+
+# Create the time series plot
+plot_mass_flux_outlier <- ggplot(sbb_top_boxplots, aes(x = Date_Open, y = Total_Mass_Flux_g_m2_day)) +
+  geom_line(color = "blue", na.rm = TRUE,) +  # Trend line
+  geom_point(data = filter(sbb_top_boxplots, is_outlier), aes(x = Date_Open, y = Total_Mass_Flux_g_m2_day), color = "red", size = 2) +  # Highlight outliers
+  labs(title = "Time Series of Total Mass Flux with Outliers",
+       x = "Date", y = "Total Mass Flux (g/m²/day)") +
+  theme_minimal()
+
+plot_mass_flux_outlier
+
+#############
+
+# Experimenting with comparing Monthly vs. Yearly Trends in One Plot
+
+
+sbb_top_boxplots <- sbb_top_boxplots %>%
+  mutate(TimePeriod = factor(ifelse(!is.na(month), paste("Month:", month), paste("Year:", year)), levels = unique(c(paste("Month:", 1:12), paste("Year:", unique(year))))))
+
+# Combined boxplot for Monthly and Yearly Trends
+plot_combined_boxplot <- ggplot(sbb_top_boxplots, aes(x = TimePeriod, y = Total_Mass_Flux_g_m2_day, fill = TimePeriod)) +
+  geom_boxplot() +
+  stat_summary(fun = mean, geom = "point", shape = 21, size = 2, fill = "red") +
+  facet_wrap(~Constituent, scales = "free_y") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +  # Rotate x-axis labels
+  labs(title = "Comparison of Monthly vs. Yearly Trends",
+       x = "Time Period", y = "Total Mass Flux (g/m²/day)") +
+  theme_minimal()
+
+print(plot_combined_boxplot)
+
+
+###########################################
+###########################################
+
+### NOW.. DO ALL THE SAME BUT FOR THE BOTTOM TRAP INSTEAD. 
+
+
+############################################
+
+#CNP Ratios
+
+filtered_flux = sbb_top_boxplots %>%
+  filter(!is.na(POC_Flux_mmoles_m2_day),
+         !is.na(PON_Flux_mmoles_m2_day),
+         !is.na(TPP_Flux_umolesP_m2_day))
+
+ggplot(filtered_flux, aes(x = POC_Flux_mmoles_m2_day, y = PON_Flux_mmoles_m2_day)) +
+  geom_point(color = "steelblue") +
+  geom_smooth(method = "lm", color = "darkred", se = TRUE)+
+  labs(x = "POC Flux (mmol/m²/day)",
+       y = "PON Flux (mmol/m²/day)",
+       title = "Carbon vs. Nitrogen Flux") +
+  theme_minimal()
+
+
+ggplot(filtered_flux, aes(x = POC_Flux_mmoles_m2_day, y = TPP_Flux_umolesP_m2_day)) +
+  geom_point(color = "steelblue") +
+  geom_smooth(method = "lm", color = "darkred", se = TRUE)+
+  labs(x = "POC Flux (mmol/m²/day)",
+       y = "TPP Flux (ummolP/m²/day)",
+       title = "Carbon vs. Phosphorous Flux") +
+  theme_minimal()
+
+# Carbon vs. Nitrogen
+lm_CN <- lm(PON_Flux_mmoles_m2_day ~ POC_Flux_mmoles_m2_day, data = filtered_flux)
+summary(lm_CN)
+
+
+# Now refit with converted P units
+lm_CP_mmol <- lm(TPP_mmolP_m2_day ~ POC_Flux_mmoles_m2_day, data = filtered_flux)
+summary(lm_CP_mmol)
+
+
+filtered_flux <- filtered_flux %>%
+  mutate(TPP_Flux_mmolesP_m2_day = TPP_Flux_umolesP_m2_day / 1000)
+
+# Carbon vs. Phosphorus
+lm_CP_mmol <- lm(TPP_Flux_mmolesP_m2_day ~ POC_Flux_mmoles_m2_day, data = filtered_flux)
+summary(lm_CP_mmol)
+
+
+ggplot(filtered_flux, aes(x = PON_Flux_mmoles_m2_day, y = TPP_Flux_umolesP_m2_day)) +
+  geom_point(color = "steelblue") +
+  geom_smooth(method = "lm", color = "darkred", se = TRUE)+
+  labs(x = "PON Flux (mmol/m²/day)",
+       y = "TPP Flux (ummolP/m²/day)",
+       title = "Nitrogen Flux vs. Phosphorous") +
+  theme_minimal()
+
+###### 
