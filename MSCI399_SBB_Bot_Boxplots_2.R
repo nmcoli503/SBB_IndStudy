@@ -5,7 +5,6 @@
 
 # this here takes the data from the excel (we converted it to a csv file) and reads it as a csv and creates our data frame. This is the data frame we will be using throughout the rest of this  r script. I titled it "sbb_bot_boxplots" because it's from the SBB project, is focusing on the bottom trap, and then df stands for data frame. 
 
-# this reads in the data.
 sbb_bot_df = read.csv(("data/CSV_files/SBB_Bot_Boxplots_moles.csv"), header = TRUE, sep = ",")
 # this makes it show up in the console.
 sbb_bot_df  
@@ -32,15 +31,18 @@ sbb_bot_df$Date_Open = as.Date(sbb_bot_df$Date_Open)
 sbb_bot_df$month = format(sbb_bot_df$Date_Open,"%m")
 
 # here i extract all the ~years~ from the Date_Open column and store it in a new column called year.
+# use a capital Y to convert to a 4 digit year rather than just a 2 digit year
 sbb_bot_df$year = format(sbb_bot_df$Date_Open,"%Y")
+
 
 ######
 
-# this line removes all rows from the sbb_bot_df data frame where the Date_Open column is NA (missing).
+# #this line removes missing dates: if rows with missing dates aren't essential, you can remove them with filter (), 
+#This code removes all rows from sbb_top_df where the Date_Open column is NA (missing), ensuring that the dataset contains only rows with valid dates.
 # is.na(Date_Open) is TRUE for rows where Date_Open is missing. ! means "not", so this keeps rows where Date_Open is NOT missing.
 sbb_bot_df = sbb_bot_df %>% filter(!is.na(Date_Open))
 
-# i just wrote these next three lines to call the information so I could visualize date open, month and year.
+# i just wrote these next three lines to call the information so I could visualize date open, month and year in the console.
 sbb_bot_df$Date_Open
 sbb_bot_df$month
 sbb_bot_df$year
@@ -49,7 +51,15 @@ sbb_bot_df$year
 
 # this code calculates the average total mass flux for each month from the sbb_bot_df dataset (ignoring missing values) and then stores the result in a new data frame called total_massflux_monthlyavg_sbb_bot.
 
-# the successive lines do the same thing for each constituient. 1) total mass flux, 2) terig flux, 3) PON flux, 4) POC flux, 5) CaCO3 flux, 6) Opal flux, 7) TPP flux, 8) PIP flux, 9) POP flux. After running this section there should be 9 data frames each with two columns --> one column is labelled 1-12 for each month of the year, and the second column is the averaged value of each month throughout the entire time frame of the dataset (all 32 years).
+# %>% is a pipe operator form the dplyr package that passes the dataframe sbb_top_boxplots to the next part of the code. 
+
+# group_by(month) groups the data in the sbb_top_boxplots dataframe and groups it based on month. 
+
+# summarise creates a summary statistic for each group. In this case we calcualte a new column in this example called "Avg_Total_Flux_sbb_top to hold the average of the Total_Mass_Flux_g_m2_day values. 
+
+# finally mean() computes the averages of the Total_Mass_Flux_g_m2_day values for each month and na.omit omits missing values so it doesn't affect the mean calculation. 
+
+# the successive lines do the same thing for each constituient. 1) total mass flux, 2) terrig flux, 3) PON flux, 4) POC flux, 5) CaCO3 flux, 6) Opal flux, 7) TPP flux, 8) PIP flux, 9) POP flux. After running this section there should be 9 data frames each with two columns --> one column is labelled 1-12 for each month of the year, and the second column is the averaged value of each month throughout the entire time frame of the dataset (all 32 years).
 
 totalmassflux_monthlyavg_sbb_bot = sbb_bot_df %>% 
   group_by(month) %>% 
@@ -89,10 +99,11 @@ POPflux_monthlyavg_sbb_top = sbb_bot_df %>%
 
 ######
 
+# this is the same but groups by year to find yearly average rather than monthly. 
+
 # this code calculates the average total mass flux for each year from the sbb_bot_df dataset (ignoring missing values) and then stores the result in a new data frame called totalmassflux_yearlyavg_sbb_bot.
 
-# the successive lines do the same thing for each constituient. 1) total mass flux, 2) terig flux, 3) PON flux, 4) POC flux, 5) CaCO3 flux, 6) Opal flux, 7) TPP flux, 8) PIP flux, 9) POP flux. After running this section there should be 9 data frames each with two columns --> one column is labelled a year (1993-2024) for each year in the 32 year dataset, and the second column is the averaged value of each year (incorporating all the months from that entire year). 
-
+# the successive lines do the same thing for each constituient. 1) total mass flux, 2) terig flux, 3) PON flux, 4) POC flux, 5) CaCO3 flux, 6) Opal flux, 7) TPP flux, 8) PIP flux, 9) POP flux. After running this section there should be 9 data frames each with two columns --> one column is labelled a year (1993-2024) for each year in the 32 year dataset, and the second column is the averaged value of each year (incorporating all the months from that entire year).
 
 totalmassflux_yearlyavg_sbb_bot <- sbb_bot_df %>% 
   group_by(year) %>% 
@@ -133,8 +144,7 @@ POPflux_yearlyavg_sbb_top <- sbb_bot_df %>%
 
 #######
 
-# this code begins to plot it all. it creates a boxplot of Total_Mass_Flux_g_m2_day by month using the sbb_bot_boxplots dataset. It also adds the monthly mean as red dots and error bars showing confidence intervals around those means. The plot is styled with labels and a formatted y-axis. a-i represents the first set of 9 constituents for the monthly graphs. The 2 just indicates this is for the bottom trap.
-
+# this code begins to plot it all. it creates a boxplot of Total_Mass_Flux_g_m2_day by month using the sbb_bot_df dataset. It also adds the monthly mean as red dots and error bars showing confidence intervals around those means. The plot is styled with labels and a formatted y-axis. a-i represents the first set of 9 constituents for the monthly graphs. The 2 just indicates this is for the bottom trap.
 
 plot_2a = ggplot(sbb_bot_df, aes(x = month, y = Total_Mass_Flux_g_m2_day)) +
   geom_boxplot() +
@@ -453,6 +463,7 @@ grid.arrange(plot_2g,plot_2h,plot_2i, nrow=1,ncol=3)
 plotall_2ab <- plot_2g+plot_2h+plot_2i
 plotall_2ab
 
+# just plots 3 at a time. 
 #grid.arrange(plot_2a,plot_2b,plot_2c, nrow=1,ncol=3)
 #plotall_2ac <- plot_2a+plot_2b+plot_2c
 #plotall_2ac
@@ -463,7 +474,7 @@ plotall_2ab
 
 #######
 
-## YEARLY PLOTS##
+## YEARLY PLOTS ##
 
 # total mass, terrig, PON, POC, CaCo3, Opal. 
 sbb_bot_plot_2j_to_2o = grid.arrange(plot_2j,plot_2k,plot_2l,plot_2m, plot_2n,plot_2o, nrow=2,ncol=3)
@@ -602,24 +613,12 @@ summary(lm_NP)
 
 # Ratio = 2.6 (much smaller < than Redfield Ratio) 16:1
 
+# Note. when the ratio is smaller than redfield ratio, the dashed ratio line is ABOVE the linear model. when the ratio is is larger than the redfield ratio, the dashed ratio line is BELOW the linear model.
 
+
+# saves some graphs
 ggsave("figures/CtoN_RatioGraph.jpg", plot_CtoN, width = 12, height = 8)
-
 ggsave("figures/SBB_Bot_Monthly_TotalFlux.jpg",plot_2a,width = 10, height = 8)
 #############################
 
-#Linear Modles: modeling over time
-
-sbb_bot_boxplots$month <- as.factor(sbb_bot_boxplots$month)
-
-table(sbb_bot_boxplots$year)
-table(sbb_bot_boxplots$month)
-
-sbb_bot_boxplots$year <- relevel(as.factor(sbb_bot_boxplots$year), ref = "1994")
-sbb_bot_boxplots$month <- relevel(as.factor(sbb_bot_boxplots$month), ref = "03")
-
-model_a_factor_year <- lm(Total_Mass_Flux_g_m2_day ~ year + month, data = sbb_bot_boxplots)
-summary(model_a_factor_year)
-
-table(sbb_bot_boxplots$year)
-unique(sbb_bot_boxplots$year)
+#Linear Models: modeling over time

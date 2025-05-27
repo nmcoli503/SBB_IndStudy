@@ -1,9 +1,16 @@
-#path: C:/Users/ninac/OneDrive - University of South Carolina/Documents/R Studio Documents/MSCI399/MSCI399_SBB_Top_Boxplots_2.R
+### SBB Ind Study Project ###
+## Fall 2024 - Summer 2025 ##
 
-#sbb_top_2 <-SBB_Top_Boxplots_umoles
+#Santa Barbara Basin !TOP TRAP!
 
-sbb_top_boxplots = read.csv(("data/CSV_files/SBB_Top_Boxplots_moles.csv"), header = TRUE, sep = ",")
-sbb_top_boxplots  
+# this here takes the data from the excel (we converted it to a csv file) and reads it as a csv and creates our data frame. This is the data frame we will be using throughout the rest of this  r script. I titled it "sbb_bot_boxplots" because it's from the SBB project, is focusing on the bottom trap, and then df stands for data frame. 
+sbb_top_df = read.csv(("data/CSV_files/SBB_Top_Boxplots_moles.csv"), header = TRUE, sep = ",")
+# this makes it show up in the console.
+sbb_top_df 
+
+######
+
+# here i loaded all my libraries. previously these have been downloaded and installed which is what i only loaded them here. 
 
 library(ggplot2)
 library(lubridate)
@@ -15,37 +22,34 @@ library(patchwork)   # patchwork
 library(dplyr)       #allows r to process data more easily
 # these last three work together. Can plot multiple  graphs on one page
 
+######
 
-# this line of code takes the Date_Open column and performs the function as date which just makes sure that it's formatted correctly). then it puts it back into the Date_Open Column
-sbb_top_boxplots$Date_Open <-as.Date(sbb_top_boxplots$Date_Open)
+# here i make the date open column into an as.date format. 
+sbb_top_df$Date_Open = as.Date(sbb_top_df$Date_Open)
 
-#sbb_top <- sbb_top %>%
-#mutate(
-# month = month(Date_Open),
-#year = year(Date_Open))
+# here i extract all the ~months~ from the Date_Open column (as a two digit string) and store it in a new column called month.
+sbb_top_df$month = format(sbb_top_df$Date_Open,"%m")
 
-
-#extracts all the months from the Date_Open column as a two digit string and stores it in a new column called month
-sbb_top_boxplots$month <- format(sbb_top_boxplots$Date_Open,"%m")
-
-#extracts all the years from the Date_Open column as a two digit string and stores it in a new column called year. 
+# here i extract all the ~years~ from the Date_Open column (as a two digit string) and store it in a new column called year.
 # use a capital Y to convert to a 4 digit year rather than just a 2 digit year
-sbb_top_boxplots$year <- format(sbb_top_boxplots$Date_Open,"%y")
+sbb_top_df$year = format(sbb_top_df$Date_Open,"%y")
 
 
 #this line removes missing dates: if rows with missing dates aren't essential, you can remove them with filter (), 
-#This code removes all rows from sbb_top_boxplots where the Date_Open column has missing values, ensuring that the dataset contains only rows with valid dates.
+#This code removes all rows from sbb_top_df where the Date_Open column is NA (missing), ensuring that the dataset contains only rows with valid dates.
+# is.na(Date_Open) is TRUE for rows where Date_Open is missing. ! means "not", so this keeps rows where Date_Open is NOT missing.
 
 # note: the rows went from 353 to 333 meaning 20 rows did not have a date filled out. (this is likely because we have traps where the date got skipped because of clogs and such or because an extra row was added for visual clarify).
+sbb_top_df = sbb_top_df %>% filter(!is.na(Date_Open))
 
-sbb_top_boxplots <- sbb_top_boxplots %>% filter(!is.na(Date_Open))
+# i just wrote these next three lines to call the information so I could visualize date open, month and year in the console.
+sbb_top_df$Date_Open
+sbb_top_df$month
+sbb_top_df$year
 
-#I just wrote these next three lines to call the information so I could visualize it in the console.
-sbb_top_boxplots$Date_Open
-sbb_top_boxplots$month
-sbb_top_boxplots$year
+######
 
-#this code below calculates the monthly average of a variable (ex: total mass flux) and prepares it for plotting. 
+# this code calculates the average total mass flux for each month from the sbb_bot_df dataset (ignoring missing values) and then stores the result in a new data frame called total_massflux_monthlyavg_sbb_bot.
 
 # %>% is a pipe operator form the dplyr package that passes the dataframe sbb_top_boxplots to the next part of the code. 
 
@@ -55,211 +59,217 @@ sbb_top_boxplots$year
 
 # finally mean() computes the averages of the Total_Mass_Flux_g_m2_day values for each month and na.omit omits missing values so it doesn't affect the mean calculation. 
 
-# this is repeated for all 9 parameters and then again for yearly averages.
+# the successive lines do the same thing for each constituient. 1) total mass flux, 2) terig flux, 3) PON flux, 4) POC flux, 5) CaCO3 flux, 6) Opal flux, 7) TPP flux, 8) PIP flux, 9) POP flux. After running this section there should be 9 data frames each with two columns --> one column is labelled 1-12 for each month of the year, and the second column is the averaged value of each month throughout the entire time frame of the dataset (all 32 years).
 
-massflux_monthlyavg_sbb_top <- sbb_top_boxplots%>% 
+totalmassflux_monthlyavg_sbb_top = sbb_top_df%>% 
   group_by(month) %>% 
   summarise (Avg_Total_Mass_Flux_g_m2_day_sbb_top = mean(na.omit(Total_Mass_Flux_g_m2_day)))
 
-terigflux_monthlyavg_sbb_top <- sbb_top_boxplots%>% 
+terigflux_monthlyavg_sbb_top = sbb_top_df%>% 
   group_by(month) %>% 
   summarise (Avg_Terrig_Flux_g_m2_da_sbb_top = mean(na.omit(Terrigenous_Flux_g_m2_day)))
 
-PONflux_monthlyavg_sbb_top <- sbb_top_boxplots%>% 
+PONflux_monthlyavg_sbb_top = sbb_top_df%>% 
   group_by(month) %>% 
   summarise (Avg_PON_Flux_mmoles_m2_day_sbb_top = mean(na.omit(PON_Flux_mmoles_m2_day)))
 
-POCflux_monthlyavg_sbb_top <- sbb_top_boxplots%>% 
+POCflux_monthlyavg_sbb_top = sbb_top_df%>% 
   group_by(month) %>% 
   summarise (Avg_POC_Flux_mmoles_m2_day_sbb_top = mean(na.omit(POC_Flux_mmoles_m2_day)))
 
-CaCO3flux_monthlyavg_sbb_top <- sbb_top_boxplots%>% 
+CaCO3flux_monthlyavg_sbb_top = sbb_top_df%>% 
   group_by(month) %>% 
   summarise (Avg_CaCO3_Flux_mmoles_m2_day_sbb_top = mean(na.omit(CaCO3_Flux_mmoles_m2_day)))
 
-Opalflux_monthlyavg_sbb_top <- sbb_top_boxplots%>% 
+Opalflux_monthlyavg_sbb_top = sbb_top_df%>% 
   group_by(month) %>% 
   summarise (Avg_Opal_Flux_mmoles_m2_day_sbb_top = mean(na.omit(OPAL_Flux_mmoles_m2_day)))
 
-TPPflux_monthlyavg_sbb_top <- sbb_top_boxplots%>% 
+TPPflux_monthlyavg_sbb_top = sbb_top_df%>% 
   group_by(month) %>% 
   summarise (Avg_TPP_Flux_umolesP_m2_day_sbb_top = mean(na.omit(TPP_Flux_umolesP_m2_day)))
 
-PIPflux_monthlyavg_sbb_top <- sbb_top_boxplots%>% 
+PIPflux_monthlyavg_sbb_top = sbb_top_df%>% 
   group_by(month) %>% 
   summarise (Avg_PIP_Flux_umolesP_m2_day_sbb_top = mean(na.omit(PIP_Flux_umolesP_m2_day)))
 
-POPflux_monthlyavg_sbb_top <- sbb_top_boxplots%>% 
+POPflux_monthlyavg_sbb_top = sbb_top_df%>% 
   group_by(month) %>% 
   summarise (Avg_POP_Flux_umolesP_m2_day_sbb_top = mean(na.omit(POP_Flux_umolesP_m2_day)))
 
-#################
+######
 
-# this is the same by groups by year to find yearly average
+# this is the same but groups by year to find yearly average rather than monthly. 
 
-massflux_yearlyavg_sbb_top <- sbb_top_boxplots%>% 
+# this code calculates the average total mass flux for each year from the sbb_bot_df dataset (ignoring missing values) and then stores the result in a new data frame called totalmassflux_yearlyavg_sbb_bot.
+
+# the successive lines do the same thing for each constituient. 1) total mass flux, 2) terig flux, 3) PON flux, 4) POC flux, 5) CaCO3 flux, 6) Opal flux, 7) TPP flux, 8) PIP flux, 9) POP flux. After running this section there should be 9 data frames each with two columns --> one column is labelled a year (1993-2024) for each year in the 32 year dataset, and the second column is the averaged value of each year (incorporating all the months from that entire year).
+
+totalmassflux_yearlyavg_sbb_top = sbb_top_df%>% 
   group_by(year) %>% 
   summarise (Avg_Total_Mass_Flux_g_m2_day_sbb_top = mean(na.omit(Total_Mass_Flux_g_m2_day)))
 
-terigflux_yearlyavg_sbb_top <- sbb_top_boxplots%>% 
+terigflux_yearlyavg_sbb_top = sbb_top_df%>% 
   group_by(year) %>% 
   summarise (Avg_Terrig_Flux_g_m2_day_sbb_top = mean(na.omit(Terrigenous_Flux_g_m2_day)))
 
-PONflux_yearlyavg_sbb_top <- sbb_top_boxplots%>% 
+PONflux_yearlyavg_sbb_top = sbb_top_df%>% 
   group_by(year) %>% 
   summarise (Avg_PON_Flux_mmoles_m2_day_sbb_top = mean(na.omit(PON_Flux_mmoles_m2_day)))
 
-POCflux_yearlyavg_sbb_top <- sbb_top_boxplots%>% 
+POCflux_yearlyavg_sbb_top = sbb_top_df%>% 
   group_by(year) %>% 
   summarise (Avg_POC_Flux_mmoles_m2_day_sbb_top = mean(na.omit(POC_Flux_mmoles_m2_day)))
 
-CaCO3flux_yearlyavg_sbb_top <- sbb_top_boxplots%>% 
+CaCO3flux_yearlyavg_sbb_top = sbb_top_df%>% 
   group_by(year) %>% 
   summarise (Avg_CaCO3_Flux_mmoles_m2_day_sbb_top = mean(na.omit(CaCO3_Flux_mmoles_m2_day)))
 
-Opalflux_yearlyavg_sbb_top <- sbb_top_boxplots%>% 
+Opalflux_yearlyavg_sbb_top = sbb_top_df%>% 
   group_by(year) %>% 
   summarise (Avg_Opal_Flux_mmoles_m2_day_sbb_top = mean(na.omit(OPAL_Flux_mmoles_m2_day)))
 
-TPPflux_yearlyavg_sbb_top <-sbb_top_boxplots%>% 
+TPPflux_yearlyavg_sbb_top = sbb_top_df%>% 
   group_by(year) %>% 
   summarise (Avg_TPP_Flux_umolesP_m2_day_sbb_top = mean(na.omit(TPP_Flux_umolesP_m2_day)))
 
-PIPflux_yearlyavg_sbb_top <- sbb_top_boxplots%>% 
+PIPflux_yearlyavg_sbb_top = sbb_top_df%>% 
   group_by(year) %>% 
   summarise (Avg_PIP_Flux_umolesP_m2_day_sbb_top = mean(na.omit(PIP_Flux_umolesP_m2_day)))
 
-POPflux_yearlyavg_sbb_top <- sbb_top_boxplots%>% 
+POPflux_yearlyavg_sbb_top = sbb_top_df%>% 
   group_by(year) %>% 
   summarise (Avg_POP_Flux_umolesP_m2_day_sbb_top = mean(na.omit(POP_Flux_umolesP_m2_day)))
 
+######
 
-###################
-#str(sbb_top_boxplots)
+#str(sbb_top_df)
 #class(month)
 
-plot_a <- ggplot(sbb_top_boxplots, aes(x = month, y = Total_Mass_Flux_g_m2_day)) +
+# this code begins to plot it all. it creates a boxplot of Total_Mass_Flux_g_m2_day by month using the sbb_bot_df dataset. It also adds the monthly mean as red dots and error bars showing confidence intervals around those means. The plot is styled with labels and a formatted y-axis. a-i represents the first set of 9 constituents for the monthly graphs. 
+
+plot_a = ggplot(sbb_top_df, aes(x = month, y = Total_Mass_Flux_g_m2_day)) +
   geom_boxplot() +
   stat_summary(fun = mean, geom = "point", shape = 21, size = 2, fill = "red") +
   stat_summary(fun.data = mean_cl_normal, geom = "errorbar", width = 0.2, color = "black") +
   labs(x = "Month", y = "Total Mass Flux (g/m^2/day)") +  scale_y_continuous(labels = scales::comma)+
   ggtitle("SBB Top: Monthly Average of Total Mass Flux")
 
-plot_b <- ggplot(sbb_top_boxplots, aes(x = month, y = Terrigenous_Flux_g_m2_day)) +
+plot_b = ggplot(sbb_top_df, aes(x = month, y = Terrigenous_Flux_g_m2_day)) +
   geom_boxplot() +
   stat_summary(fun = mean, geom = "point", shape = 21, size = 2, fill = "red") +
   stat_summary(fun.data = mean_cl_normal, geom = "errorbar", width = 0.2, color = "black") +
   labs(x = "Month", y = "Terrigenous Flux (g/m^2/day)") +  scale_y_continuous(labels = scales::comma)+
   ggtitle("SBB Top: Monthly Average of Terrigenous Flux")
 
-plot_c <- ggplot(sbb_top_boxplots, aes(x = month, y = PON_Flux_mmoles_m2_day)) +
+plot_c = ggplot(sbb_top_df, aes(x = month, y = PON_Flux_mmoles_m2_day)) +
   geom_boxplot() +
   stat_summary(fun = mean, geom = "point", shape = 21, size = 2, fill = "red") +
   stat_summary(fun.data = mean_cl_normal, geom = "errorbar", width = 0.2, color = "black") +
   labs(x = "Month", y = "PON Flux (mmoles/m^2/day)") +  scale_y_continuous(labels = scales::comma)+
   ggtitle("SBB Top: Monthly Average of PON Flux")
 
-plot_d <- ggplot(sbb_top_boxplots, aes(x = month, y = POC_Flux_mmoles_m2_day)) +
+plot_d = ggplot(sbb_top_df, aes(x = month, y = POC_Flux_mmoles_m2_day)) +
   geom_boxplot() +
   stat_summary(fun = mean, geom = "point", shape = 21, size = 2, fill = "red") +
   stat_summary(fun.data = mean_cl_normal, geom = "errorbar", width = 0.2, color = "black") +
   labs(x = "Month", y = "POC Flux (mmoles/m^2/day)") +  scale_y_continuous(labels = scales::comma)+
   ggtitle("SBB Top: Monthly Average of POC Flux")
 
-plot_e <- ggplot(sbb_top_boxplots, aes(x = month, y = CaCO3_Flux_mmoles_m2_day)) +
+plot_e = ggplot(sbb_top_df, aes(x = month, y = CaCO3_Flux_mmoles_m2_day)) +
   geom_boxplot() +
   stat_summary(fun = mean, geom = "point", shape = 21, size = 2, fill = "red") +
   stat_summary(fun.data = mean_cl_normal, geom = "errorbar", width = 0.2, color = "black") +
   labs(x = "Month", y = "CaCO3 Flux (mmoles/m^2)/day") +  scale_y_continuous(labels = scales::comma)+
   ggtitle("SBB Top: Monthly Average of CaCO3 Flux")
 
-plot_f <- ggplot(sbb_top_boxplots, aes(x = month, y = OPAL_Flux_mmoles_m2_day)) +
+plot_f = ggplot(sbb_top_df, aes(x = month, y = OPAL_Flux_mmoles_m2_day)) +
   geom_boxplot() +
   stat_summary(fun = mean, geom = "point", shape = 21, size = 2, fill = "red") +
   stat_summary(fun.data = mean_cl_normal, geom = "errorbar", width = 0.2, color = "black") +
   labs(x = "Month", y = "Opal Flux (mmoles/m^2/day)") +  scale_y_continuous(labels = scales::comma)+
   ggtitle("SBB Top: Monthly Average of Opal Flux")
 
-plot_g <- ggplot(sbb_top_boxplots, aes(x = month, y = TPP_Flux_umolesP_m2_day)) +
+plot_g = ggplot(sbb_top_df, aes(x = month, y = TPP_Flux_umolesP_m2_day)) +
   geom_boxplot() +
   stat_summary(fun = mean, geom = "point", shape = 21, size = 2, fill = "red") +
   stat_summary(fun.data = mean_cl_normal, geom = "errorbar", width = 0.2, color = "black") +
   labs(x = "Month", y = "TPP Flux (umoles/m^2/day)") +  scale_y_continuous(labels = scales::comma)+
   ggtitle("SBB Top: Monthly Average of TPP Flux")
 
-plot_h <- ggplot(sbb_top_boxplots, aes(x = month, y = PIP_Flux_umolesP_m2_day)) +
+plot_h = ggplot(sbb_top_df, aes(x = month, y = PIP_Flux_umolesP_m2_day)) +
   geom_boxplot() +
   stat_summary(fun = mean, geom = "point", shape = 21, size = 2, fill = "red") +
   stat_summary(fun.data = mean_cl_normal, geom = "errorbar", width = 0.2, color = "black") +
   labs(x = "Month", y = "PIP Flux (umoles/m^2/day)") +  scale_y_continuous(labels = scales::comma)+
   ggtitle("SBB Top: Monthly Average of PIP Flux")
 
-plot_i <- ggplot(data = sbb_top_boxplots, aes(x = month, y = POP_Flux_umolesP_m2_day)) +
+plot_i = ggplot(data = sbb_top_df, aes(x = month, y = POP_Flux_umolesP_m2_day)) +
   geom_boxplot() +
   stat_summary(fun = mean, geom = "point", shape = 21, size = 2, fill = "red") +
   stat_summary(fun.data = mean_cl_normal, geom = "errorbar", width = 0.2, color = "black") +
   labs(x = "Month", y = "POP Flux (umoles/m^2/day)") +  scale_y_continuous(labels = scales::comma)+
   ggtitle("SBB Top: Monthly Average of POP Flux")
 
-###################
+######
 
-plot_j <- ggplot(sbb_top_boxplots, aes(x = year, y = Total_Mass_Flux_g_m2_day)) +
+plot_j = ggplot(sbb_top_df, aes(x = year, y = Total_Mass_Flux_g_m2_day)) +
   geom_boxplot() +
   stat_summary(fun = mean, geom = "point", shape = 21, size = 2, fill = "red") +
   stat_summary(fun.data = mean_cl_normal, geom = "errorbar", width = 0.2, color = "black") +
   labs(x = "Year", y = "Total Mass Flux (g/m^2/day)") + scale_y_continuous(labels = scales::comma)+
   ggtitle("SBB Top: Yearly Average of Total Mass Flux")
 
-plot_k <- ggplot(sbb_top_boxplots, aes(x = year, y = Terrigenous_Flux_g_m2_day)) +
+plot_k = ggplot(sbb_top_df, aes(x = year, y = Terrigenous_Flux_g_m2_day)) +
   geom_boxplot() +
   stat_summary(fun = mean, geom = "point", shape = 21, size = 2, fill = "red") +
   stat_summary(fun.data = mean_cl_normal, geom = "errorbar", width = 0.2, color = "black") +
   labs(x = "Year", y = "Terrigenous Flux (g/m^2/day)") + scale_y_continuous(labels = scales::comma)+
   ggtitle("SBB Top: Yearly Average of Terrigenous Flux")
 
-plot_l <- ggplot(sbb_top_boxplots, aes(x = year, y = PON_Flux_mmoles_m2_day)) +
+plot_l = ggplot(sbb_top_df, aes(x = year, y = PON_Flux_mmoles_m2_day)) +
   geom_boxplot() +
   stat_summary(fun = mean, geom = "point", shape = 21, size = 2, fill = "red") +
   stat_summary(fun.data = mean_cl_normal, geom = "errorbar", width = 0.2, color = "black") +
   labs(x = "Year", y = "PON Flux (mmoles/m^2/day)") + scale_y_continuous(labels = scales::comma)+
   ggtitle("SBB Top: Yearly Average of PON Flux")
 
-plot_m <- ggplot(sbb_top_boxplots, aes(x = year, y = POC_Flux_mmoles_m2_day)) +
+plot_m = ggplot(sbb_top_df, aes(x = year, y = POC_Flux_mmoles_m2_day)) +
   geom_boxplot() +
   stat_summary(fun = mean, geom = "point", shape = 21, size = 2, fill = "red") +
   stat_summary(fun.data = mean_cl_normal, geom = "errorbar", width = 0.2, color = "black") +
   labs(x = "Year", y = "POC Flux (mmoles/m^2/day)") + scale_y_continuous(labels = scales::comma)+
   ggtitle("SBB Top: Yearly Average of POC Flux")
 
-plot_n <- ggplot(sbb_top_boxplots, aes(x = year, y = CaCO3_Flux_mmoles_m2_day)) +
+plot_n = ggplot(sbb_top_df, aes(x = year, y = CaCO3_Flux_mmoles_m2_day)) +
   geom_boxplot() +
   stat_summary(fun = mean, geom = "point", shape = 21, size = 2, fill = "red") +
   stat_summary(fun.data = mean_cl_normal, geom = "errorbar", width = 0.2, color = "black") +
   labs(x = "Year", y = "CaCO3 Flux (mmoles/m^2/day)") + scale_y_continuous(labels = scales::comma)+
   ggtitle("SBB Top: Yearly Average of CaCO3 Flux")
 
-plot_o <- ggplot(sbb_top_boxplots, aes(x = year, y = OPAL_Flux_mmoles_m2_day)) +
+plot_o = ggplot(sbb_top_df, aes(x = year, y = OPAL_Flux_mmoles_m2_day)) +
   geom_boxplot() +
   stat_summary(fun = mean, geom = "point", shape = 21, size = 2, fill = "red") +
   stat_summary(fun.data = mean_cl_normal, geom = "errorbar", width = 0.2, color = "black") +
   labs(x = "Year", y = "Opal Flux (mmoles/m^2/day)") + scale_y_continuous(labels = scales::comma)+
   ggtitle("SBB Top: Yearly Average of Opal Flux")
 
-plot_p <- ggplot(sbb_top_boxplots, aes(x = year, y = TPP_Flux_umolesP_m2_day)) +
+plot_p = ggplot(sbb_top_df, aes(x = year, y = TPP_Flux_umolesP_m2_day)) +
   geom_boxplot() +
   stat_summary(fun = mean, geom = "point", shape = 21, size = 2, fill = "red") +
   stat_summary(fun.data = mean_cl_normal, geom = "errorbar", width = 0.2, color = "black") +
   labs(x = "Year", y = "TPP Flux (umoles/m^2/day)") + scale_y_continuous(labels = scales::comma)+
   ggtitle("SBB Top: Yearly Average of TPP Flux")
 
-plot_q <- ggplot(sbb_top_boxplots, aes(x = year, y = PIP_Flux_umolesP_m2_day)) +
+plot_q = ggplot(sbb_top_df, aes(x = year, y = PIP_Flux_umolesP_m2_day)) +
   geom_boxplot() +
   stat_summary(fun = mean, geom = "point", shape = 21, size = 2, fill = "red") +
   stat_summary(fun.data = mean_cl_normal, geom = "errorbar", width = 0.2, color = "black") +
   labs(x = "Year", y = "PIP Flux (umoles/m^2/day)") + scale_y_continuous(labels = scales::comma)+
   ggtitle("SBB Top: Yearly Average of PIP Flux")
 
-plot_r <- ggplot(sbb_top_boxplots, aes(x = year, y = POP_Flux_umolesP_m2_day)) +
+plot_r = ggplot(sbb_top_df, aes(x = year, y = POP_Flux_umolesP_m2_day)) +
   geom_boxplot() +
   stat_summary(fun = mean, geom = "point", shape = 21, size = 2, fill = "red") +
   stat_summary(fun.data = mean_cl_normal, geom = "errorbar", width = 0.2, color = "black") +
@@ -267,51 +277,61 @@ plot_r <- ggplot(sbb_top_boxplots, aes(x = year, y = POP_Flux_umolesP_m2_day)) +
   ggtitle("SBB Top: Yearly Average of POP Flux")
 
 ######
-# Question 1: what is the red point? --> mean, thick line = median
+# Question 1: what is the red point? 
+# Answer: mean, thick line = median
+
 # Question 2: the sd is different than the quartile lines??
-# Question 3: how to get rid of N/A after 2024 and month 12
-# Question 4: is removed rows okay? "Removed 53 rows containing non-finite outside the scale range (`stat_boxplot()`)."
-# Question 5: putting them all together
-# Question 6: why is there a value for NA
+# Answer: yes
 
 #class(plota)
 
+
+######
+
+## MONTHLY PLOTS ##
+
+# organizes plots together: total mass, terrig, PON, POC, CaCO3, Opal
 sbbtop_plot_a_to_f = grid.arrange(plot_a,plot_b,plot_c,plot_d,plot_e,plot_f, nrow = 2,ncol = 3)
 print(sbbtop_plot_a_to_f)
 
+# TPP, PIP, POP
 sbbtop_plot_ghi= grid.arrange(plot_g,plot_h,plot_i, nrow=1,ncol=3)
 sbbtop_plot_ghi
 
-
+# total mass, terrig flux
 plot_a_b = grid.arrange(plot_a,plot_b, nrow=2,ncol=1)
 plot_a_b
 
+# PON, POC
 plot_c_d = grid.arrange(plot_c,plot_d, nrow=2,ncol=1)
 plot_c_d
 
+# CaCO3, Opal
 plot_e_f = grid.arrange(plot_e,plot_f, nrow=2,ncol=1)
 plot_e_f
 
+# TPP, PIP
 plot_g_h = grid.arrange(plot_g,plot_h, nrow=2,ncol=1)
 
+# POP
 plot_i = grid.arrange(plot_i,nrow=1,ncol=1)
 
-
+# this code saves them as a PDF.
 ggsave("figures/SBBTop_Monthly_Total_Terrig.pdf", plot = plot_a_b, width = 10, height = 8)
 ggsave("figures/SBBTop_Monthly_PON_POC.pdf", plot = plot_c_d, width = 10, height = 8)
 ggsave("figures/SBBTop_Monthly_Carbonate_Opal.pdf", plot = plot_e_f, width = 10, height = 8)
 ggsave("figures/SBBTop_Monthly_TPP_PIP.pdf", plot = plot_g_h, width = 10, height = 8)
 ggsave("figures/SBBTop_Monthly_POP.pdf", plot = plot_i, width = 10, height = 8)
 
-##
+######
+# # just plots 3 at a time; total, terrig, PON
+grid.arrange(plot_a,plot_b,plot_c, nrow=1,ncol=3)
+plotall_ac <- plot_a+plot_b+plot_c
+plotall_ac
 
-#grid.arrange(plot_a,plot_b,plot_c, nrow=1,ncol=3)
-#plotall_ac <- plot_a+plot_b+plot_c
-#plotall_ac
-
-#grid.arrange(plot_d, plot_e,plot_f, nrow=1,ncol=3)
-#plotall_ae <- plot_d+plot_e+plot_f
-#plotall_ae
+grid.arrange(plot_d, plot_e,plot_f, nrow=1,ncol=3)
+plotall_ae <- plot_d+plot_e+plot_f
+plotall_ae
 
 sbbtop_plot_j_to_o = grid.arrange(plot_j,plot_k,plot_l,plot_m, plot_n,plot_o, nrow=2,ncol=3)
 sbbbot_plot_j_to_o
@@ -319,24 +339,31 @@ sbbbot_plot_j_to_o
 sbbtop_plot_pqr = grid.arrange(plot_p,plot_q,plot_r, nrow=1,ncol=3)
 sbbtop_plot_pqr
 
-
 ################
 
+## YEARLY PLOTS ##
+
+# total, terrig
 plot_j_k = grid.arrange(plot_j,plot_k, nrow=2,ncol=1)
 plot_j_k
 
+#PON, POC
 plot_l_m = grid.arrange(plot_l,plot_m, nrow=2,ncol=1)
 plot_l_m
 
+# CaCO3, Opal
 plot_n_o = grid.arrange(plot_n,plot_o, nrow=2,ncol=1)
 plot_n_o
 
+# TPP, PIP
 plot_p_q = grid.arrange(plot_p,plot_q, nrow=2,ncol=1)
 plot_p_q
 
+# POP
 plot_r = grid.arrange(plot_r,nrow=1,ncol=1)
 plot_r
 
+# saves as PDF again.
 ggsave("figures/SBBTop_Yearly_Total_Terrig.pdf", plot = plot_j_k, width = 10, height = 8)
 ggsave("figures/SBBTop_Yearly_PON_POC.pdf", plot = plot_l_m, width = 10, height = 8)
 ggsave("figures/SBBTop_Yearly_Carbonate_Opal.pdf", plot = plot_n_o, width = 10, height = 8)
@@ -345,7 +372,7 @@ ggsave("figures/SBBTop_Yearly_POP.pdf", plot = plot_r, width = 10, height = 8)
 
 #################
 
-# Experimenting with Time Series of Total Mass Flux
+# Experimenting with Time Series of Total Mass Flux #
 
 #library(ggplot2)
 #library(dplyr)
@@ -393,7 +420,6 @@ print(plot_combined_boxplot)
 ###########################################
 
 ### NOW.. DO ALL THE SAME BUT FOR THE BOTTOM TRAP INSTEAD. 
-
 
 ############################################
 

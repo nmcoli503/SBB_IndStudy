@@ -1,7 +1,9 @@
-#path: C:/Users/ninac/OneDrive - University of South Carolina/Documents/R Studio Documents/MSCI399/MSCI399_SBB_Top_Boxplots.R
+### SBB Ind Study Project ###
+## Fall 2024 - Summer 2025 ##
 
-# this exact path is outdated as of 2025-02-18
+#Santa Barbara Basin !TOP TRAP!
 
+# this code here downloads and installs various packages from CRAN. Typically you only need to install once and then load the library in each script.
 
 #download.packages("ggplot")
 
@@ -12,6 +14,9 @@
 #install.packages("gridBase")
 #install.packages("gridExtra")
 #install.packages("patchwork")
+
+
+# Here is how we grab our raw data, (THIS NEEDS TO BE UPDATED, 5/27/25)
 
 #assigns data in excel sheet to a variable just to be succinct
 
