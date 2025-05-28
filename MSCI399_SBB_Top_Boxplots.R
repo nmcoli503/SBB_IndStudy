@@ -1,3 +1,5 @@
+## This code is pretty outdated ##
+
 ### SBB Ind Study Project ###
 ## Fall 2024 - Summer 2025 ##
 

@@ -99,7 +99,7 @@ POPflux_monthlyavg_sbb_top = sbb_top_df%>%
 
 ######
 
-# this is the same but groups by year to find yearly average rather than monthly. 
+# this is the same but groups by year to find YEARLY average rather than monthly. 
 
 # this code calculates the average total mass flux for each year from the sbb_bot_df dataset (ignoring missing values) and then stores the result in a new data frame called totalmassflux_yearlyavg_sbb_bot.
 
@@ -284,8 +284,6 @@ plot_r = ggplot(sbb_top_df, aes(x = year, y = POP_Flux_umolesP_m2_day)) +
 # Answer: yes
 
 #class(plota)
-
-
 ######
 
 ## MONTHLY PLOTS ##
@@ -326,11 +324,11 @@ ggsave("figures/SBBTop_Monthly_POP.pdf", plot = plot_i, width = 10, height = 8)
 ######
 # # just plots 3 at a time; total, terrig, PON
 grid.arrange(plot_a,plot_b,plot_c, nrow=1,ncol=3)
-plotall_ac <- plot_a+plot_b+plot_c
+plotall_ac = plot_a+plot_b+plot_c
 plotall_ac
 
 grid.arrange(plot_d, plot_e,plot_f, nrow=1,ncol=3)
-plotall_ae <- plot_d+plot_e+plot_f
+plotall_ae = plot_d+plot_e+plot_f
 plotall_ae
 
 sbbtop_plot_j_to_o = grid.arrange(plot_j,plot_k,plot_l,plot_m, plot_n,plot_o, nrow=2,ncol=3)
@@ -339,7 +337,7 @@ sbbbot_plot_j_to_o
 sbbtop_plot_pqr = grid.arrange(plot_p,plot_q,plot_r, nrow=1,ncol=3)
 sbbtop_plot_pqr
 
-################
+######
 
 ## YEARLY PLOTS ##
 
@@ -370,15 +368,89 @@ ggsave("figures/SBBTop_Yearly_Carbonate_Opal.pdf", plot = plot_n_o, width = 10, 
 ggsave("figures/SBBTop_Yearly_TPP_PIP.pdf", plot = plot_p_q, width = 10, height = 8)
 ggsave("figures/SBBTop_Yearly_POP.pdf", plot = plot_r, width = 10, height = 8)
 
-#################
+######
 
-# Experimenting with Time Series of Total Mass Flux #
+## CNP Ratios ##
+
+# filters out rows with missing values. keeps only rows where POC, PON, and TPP flux values are present (i.e., not NA). stores the filtered result in filtered_flux_bot data frame.
+filtered_flux_top = sbb_top_df %>%
+  filter(!is.na(POC_Flux_mmoles_m2_day),
+         !is.na(PON_Flux_mmoles_m2_day),
+         !is.na(TPP_Flux_umolesP_m2_day))
+
+## Plot of Carbon to Nitrogen
+# create a scatterplot with regression line and added slope line (106:16 = 6.6)
+plot_CtoN_top = ggplot(filtered_flux_top, aes(x = PON_Flux_mmoles_m2_day, y = POC_Flux_mmoles_m2_day )) +
+  geom_point(color = "steelblue") +
+  geom_smooth(method = "lm", color = "darkred", se = TRUE)+
+  geom_abline(slope = 6.6, intercept = 0, linetype = "dashed", color = "blue", linewidth = .7) +
+  labs(x = "PON Flux (mmol/m²/day)",
+       y = "POC Flux (mmol/m²/day)",
+       title = "Carbon vs. Nitrogen Flux") +
+  theme_minimal()
+plot_CtoN_top
+
+# linear model of Carbon vs. Nitrogen
+lm_CN_top = lm(POC_Flux_mmoles_m2_day ~ PON_Flux_mmoles_m2_day, data = filtered_flux_top)
+summary(lm_CN_top)
+
+# ratio = 7.2432 (slightly > than redfield ratio of 6.6)
+
+# Plot of Carbon to Phosphorous
+# create a scatterplot with regression line and added slope line (106:1 = 106)
+plot_CtoP_top = ggplot(filtered_flux_top, aes(x = TPP_Flux_umolesP_m2_day / 1000, y = POC_Flux_mmoles_m2_day)) +
+  geom_point(color = "steelblue") +
+  geom_smooth(method = "lm", color = "darkred", se = TRUE)+
+  geom_abline(slope = 106, intercept = 0, linetype = "dashed", color = "blue", linewidth = .7) +
+  labs(x = "TPP Flux (mmolP/m²/day)",
+       y = "POC Flux (mmol/m²/day)",
+       title = "Carbon vs. Phosphorous Flux") +
+  theme_minimal()
+plot_CtoP_top
+
+# Now refit with converted P units
+
+# this does the same as below (filters the data putting TPP into mmoles rather than umoles) but using tidy verse "mutate"
+filtered_flux_top = filtered_flux_top %>%
+  mutate(TPP_Flux_mmolesP_m2_day = TPP_Flux_umolesP_m2_day / 1000)
+
+# this does the same as above but with base R and '$' rather than tidy verse. 
+# filtered_flux_bot$TPP_Flux_mmolP_m2_day = filtered_flux_bot$TPP_Flux_umolesP_m2_day / 1000
+
+# linear model of Carbon vs. Phosphorous (data is filtered first, units are converted)
+lm_CP_top= lm(POC_Flux_mmoles_m2_day ~ TPP_Flux_mmolesP_m2_day , data = filtered_flux_top)
+summary(lm_CP_top)
+
+
+# Ratio = 36.1751 (which is much < than Redfield Ratio of 106:1)
+
+# Plot of Nitrogen to Phosphorous
+# create a scatterplot with regression line and added slope line (16:1 = 16)
+plot_NtoP_top = ggplot(filtered_flux_top, aes(x = TPP_Flux_mmolesP_m2_day, y = PON_Flux_mmoles_m2_day)) +
+  geom_point(color = "steelblue") +
+  geom_smooth(method = "lm", color = "darkred", se = TRUE)+
+  geom_abline(slope = 16, intercept = 0, linetype = "dashed", color = "blue", linewidth = .7) +
+  labs(x = "TPP Flux (mmmolP/m²/day)",
+       y = "PON Flux (mmol/m²/day)",
+       title = "Nitrogen vs. Phosphorous Flux") +
+  theme_minimal()
+plot_NtoP_top
+
+# linear model of Nitrogen vs. Phosphorous
+lm_NP_top = lm(PON_Flux_mmoles_m2_day ~ TPP_Flux_mmolesP_m2_day, data = filtered_flux_top)
+summary(lm_NP_top)
+
+# Ratio: 4.31034 (which is < than Redfield Ratio 16:1)
+
+### I don't think any of this works, right above or below ###
+
+## Experimenting with Time Series of Total Mass Flux ##
 
 #library(ggplot2)
 #library(dplyr)
 
 # Identify outliers using IQR method
-sbb_top_boxplots <- sbb_top_boxplots %>%
+sbb_top_boxplots = sbb_top_df %>%
   mutate(Q1 = quantile(Total_Mass_Flux_g_m2_day, 0.25, na.rm = TRUE),
          Q3 = quantile(Total_Mass_Flux_g_m2_day, 0.75, na.rm = TRUE),
          IQR = Q3 - Q1,
@@ -386,25 +458,24 @@ sbb_top_boxplots <- sbb_top_boxplots %>%
            Total_Mass_Flux_g_m2_day > (Q3 + 1.5 * IQR))
 
 # Create the time series plot
-plot_mass_flux_outlier <- ggplot(sbb_top_boxplots, aes(x = Date_Open, y = Total_Mass_Flux_g_m2_day)) +
+plot_mass_flux_outlier = ggplot(sbb_top_df, aes(x = Date_Open, y = Total_Mass_Flux_g_m2_day)) +
   geom_line(color = "blue", na.rm = TRUE,) +  # Trend line
-  geom_point(data = filter(sbb_top_boxplots, is_outlier), aes(x = Date_Open, y = Total_Mass_Flux_g_m2_day), color = "red", size = 2) +  # Highlight outliers
+  geom_point(data = filter(sbb_top_df, is_outlier), aes(x = Date_Open, y = Total_Mass_Flux_g_m2_day), color = "red", size = 2) +  # Highlight outliers
   labs(title = "Time Series of Total Mass Flux with Outliers",
        x = "Date", y = "Total Mass Flux (g/m²/day)") +
   theme_minimal()
 
 plot_mass_flux_outlier
 
-#############
+######
 
 # Experimenting with comparing Monthly vs. Yearly Trends in One Plot
 
-
-sbb_top_boxplots <- sbb_top_boxplots %>%
+sbb_top_boxplots = sbb_top_df %>%
   mutate(TimePeriod = factor(ifelse(!is.na(month), paste("Month:", month), paste("Year:", year)), levels = unique(c(paste("Month:", 1:12), paste("Year:", unique(year))))))
 
 # Combined boxplot for Monthly and Yearly Trends
-plot_combined_boxplot <- ggplot(sbb_top_boxplots, aes(x = TimePeriod, y = Total_Mass_Flux_g_m2_day, fill = TimePeriod)) +
+plot_combined_boxplot = ggplot(sbb_top_df, aes(x = TimePeriod, y = Total_Mass_Flux_g_m2_day, fill = TimePeriod)) +
   geom_boxplot() +
   stat_summary(fun = mean, geom = "point", shape = 21, size = 2, fill = "red") +
   facet_wrap(~Constituent, scales = "free_y") +
@@ -414,63 +485,3 @@ plot_combined_boxplot <- ggplot(sbb_top_boxplots, aes(x = TimePeriod, y = Total_
   theme_minimal()
 
 print(plot_combined_boxplot)
-
-
-###########################################
-###########################################
-
-### NOW.. DO ALL THE SAME BUT FOR THE BOTTOM TRAP INSTEAD. 
-
-############################################
-
-#CNP Ratios
-
-filtered_flux = sbb_top_boxplots %>%
-  filter(!is.na(POC_Flux_mmoles_m2_day),
-         !is.na(PON_Flux_mmoles_m2_day),
-         !is.na(TPP_Flux_umolesP_m2_day))
-
-ggplot(filtered_flux, aes(x = POC_Flux_mmoles_m2_day, y = PON_Flux_mmoles_m2_day)) +
-  geom_point(color = "steelblue") +
-  geom_smooth(method = "lm", color = "darkred", se = TRUE)+
-  labs(x = "POC Flux (mmol/m²/day)",
-       y = "PON Flux (mmol/m²/day)",
-       title = "Carbon vs. Nitrogen Flux") +
-  theme_minimal()
-
-
-ggplot(filtered_flux, aes(x = POC_Flux_mmoles_m2_day, y = TPP_Flux_umolesP_m2_day)) +
-  geom_point(color = "steelblue") +
-  geom_smooth(method = "lm", color = "darkred", se = TRUE)+
-  labs(x = "POC Flux (mmol/m²/day)",
-       y = "TPP Flux (ummolP/m²/day)",
-       title = "Carbon vs. Phosphorous Flux") +
-  theme_minimal()
-
-# Carbon vs. Nitrogen
-lm_CN <- lm(PON_Flux_mmoles_m2_day ~ POC_Flux_mmoles_m2_day, data = filtered_flux)
-summary(lm_CN)
-
-
-# Now refit with converted P units
-lm_CP_mmol <- lm(TPP_mmolP_m2_day ~ POC_Flux_mmoles_m2_day, data = filtered_flux)
-summary(lm_CP_mmol)
-
-
-filtered_flux <- filtered_flux %>%
-  mutate(TPP_Flux_mmolesP_m2_day = TPP_Flux_umolesP_m2_day / 1000)
-
-# Carbon vs. Phosphorus
-lm_CP_mmol <- lm(TPP_Flux_mmolesP_m2_day ~ POC_Flux_mmoles_m2_day, data = filtered_flux)
-summary(lm_CP_mmol)
-
-
-ggplot(filtered_flux, aes(x = PON_Flux_mmoles_m2_day, y = TPP_Flux_umolesP_m2_day)) +
-  geom_point(color = "steelblue") +
-  geom_smooth(method = "lm", color = "darkred", se = TRUE)+
-  labs(x = "PON Flux (mmol/m²/day)",
-       y = "TPP Flux (ummolP/m²/day)",
-       title = "Nitrogen Flux vs. Phosphorous") +
-  theme_minimal()
-
-###### 

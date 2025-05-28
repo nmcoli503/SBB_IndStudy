@@ -99,7 +99,7 @@ POPflux_monthlyavg_sbb_top = sbb_bot_df %>%
 
 ######
 
-# this is the same but groups by year to find yearly average rather than monthly. 
+# this is the same but groups by year to find YEARLY average rather than monthly. 
 
 # this code calculates the average total mass flux for each year from the sbb_bot_df dataset (ignoring missing values) and then stores the result in a new data frame called totalmassflux_yearlyavg_sbb_bot.
 
@@ -272,6 +272,7 @@ plot_2h = ggplot(sbb_bot_df, aes(x = month, y = PIP_Flux_umolesP_m2_day)) +
     axis.title.x = element_text(size = 14),
     axis.title.y = element_text(size = 14),
     axis.text = element_text(size = 12))
+
 
 plot_2i = ggplot(sbb_bot_df, aes(x = month, y = POP_Flux_umolesP_m2_day)) +
   geom_boxplot() +
@@ -529,9 +530,9 @@ ggsave("figures/SBB_Bot_Monthly_POCFlux.jpg",plot_2d,width = 10, height = 8)
 
 ######
 
-#CNP Ratios
+## CNP Ratios ##
 
-# filters out rows with missing values. keeps only rows where both POC and PON flux values are present (i.e., not NA). stores the filtered result in filtered_flux_bot data frame.
+# filters out rows with missing values. keeps only rows where POC, PON and TPP flux values are present (i.e., not NA). stores the filtered result in filtered_flux_bot data frame.
 
 filtered_flux_bot = sbb_bot_df %>%
   filter(!is.na(POC_Flux_mmoles_m2_day),
@@ -540,16 +541,17 @@ filtered_flux_bot = sbb_bot_df %>%
 
 # Plot of Carbon to Nitrogen
 # create a scatterplot with regression line. this plot has different colors for each year.
-plot_CtoN = ggplot(filtered_flux_bot, aes(x = PON_Flux_mmoles_m2_day, y = POC_Flux_mmoles_m2_day, color = as.factor(year))) +
+plot_CtoN_bot = ggplot(filtered_flux_bot, aes(x = PON_Flux_mmoles_m2_day, y = POC_Flux_mmoles_m2_day, color = as.factor(year))) +
   geom_point() +
   geom_smooth(method = "lm", color = "darkred", se = TRUE)+
   geom_abline(slope = 6.6, intercept = 0, linetype = "dashed", color = "blue", linewidth = .7) +
   labs(x = "PON Flux (mmol/m²/day)",
        y = "POC Flux (mmol/m²/day)",
        title = "Carbon vs. Nitrogen Flux")
+plot_CtoN_bot
 
 # this is the same but all the points are the same color and axis size and labels are larger.
-plot_CtoN_2 = ggplot(filtered_flux_bot, aes(x = PON_Flux_mmoles_m2_day, y = POC_Flux_mmoles_m2_day)) +
+plot_CtoN_2_bot = ggplot(filtered_flux_bot, aes(x = PON_Flux_mmoles_m2_day, y = POC_Flux_mmoles_m2_day)) +
   geom_point(color = "steelblue") +
   geom_smooth(method = "lm", color = "darkred", se = TRUE) +
   geom_abline(slope = 6.6, intercept = 0, linetype = "dashed", color = "blue", linewidth = .7) +
@@ -563,41 +565,46 @@ plot_CtoN_2 = ggplot(filtered_flux_bot, aes(x = PON_Flux_mmoles_m2_day, y = POC_
     axis.title.x = element_text(size = 16),
     axis.title.y = element_text(size = 16),
     axis.text = element_text(size = 14))
-
+plot_CtoN_2_bot
 
 # linear model of Carbon to Nitrogen
-lm_CN = lm(POC_Flux_mmoles_m2_day ~ PON_Flux_mmoles_m2_day, data = filtered_flux_bot)
-summary(lm_CN)
+lm_CN_bot = lm(POC_Flux_mmoles_m2_day ~ PON_Flux_mmoles_m2_day, data = filtered_flux_bot)
+summary(lm_CN_bot)
 
 # Ratio = 7.6 (slighlty > than Redfield Ratio) 106:16 = 6.6
 
 ######
 
 # Plot of Carbon to Phosphorous
-ggplot(filtered_flux_bot, aes(x = TPP_Flux_umolesP_m2_day / 1000 , y = POC_Flux_mmoles_m2_day)) +
+plot_CtoN_bot = ggplot(filtered_flux_bot, aes(x = TPP_Flux_umolesP_m2_day / 1000 , y = POC_Flux_mmoles_m2_day)) +
   geom_point(color = "steelblue") +
   geom_smooth(method = "lm", color = "darkred", se = TRUE)+
   geom_abline(slope = 106, intercept = 0, linetype = "dashed", color = "blue", linewidth = .7) +
-  labs(x = "TPP Flux (ummolP/m²/day)",
+  labs(x = "TPP Flux (mmolP/m²/day)",
        y = "POC Flux (mmol/m²/day)",
        title = "Carbon vs. Phosphorous Flux") +
   theme_minimal()
+plot_CtoN_bot
 
-# linear model of Carbon vs. Phosphorous
+# Now refit with converted P units
 
+# this does the same as below (filters the data putting TPP into mmoles rather than umoles) but using tidy verse "mutate" 
+filtered_flux_bot = filtered_flux_bot %>%
+  mutate(TPP_Flux_mmolesP_m2_day = TPP_Flux_umolesP_m2_day / 1000)
 
-filtered_flux_bot$TPP_Flux_mmolP_m2_day <- filtered_flux_bot$TPP_Flux_umolesP_m2_day / 1000
+# this does the same as above but with base R and '$' rather than tidy verse. 
+# filtered_flux_bot$TPP_Flux_mmolP_m2_day = filtered_flux_bot$TPP_Flux_umolesP_m2_day / 1000
 
-lm_CP = lm(POC_Flux_mmoles_m2_day ~ TPP_Flux_mmolP_m2_day, data = filtered_flux_bot)
-summary(lm_CP)
+# linear model of Carbon vs. Phosphorous (data is filtered first, units are converted)
+lm_CP_top = lm(POC_Flux_mmoles_m2_day ~ TPP_Flux_mmolesP_m2_day, data = filtered_flux_bot)
+summary(lm_CP_top)
 
 # Ratio = 23.681 (much smaller < than  than Redfield Ratio) 106:1
 
 ######
 
 # Plot of Nitrogen to Phosphorous
-
-ggplot(filtered_flux_bot, aes(x = TPP_Flux_mmolP_m2_day, y = PON_Flux_mmoles_m2_day)) +
+plot_NtoP_bot = ggplot(filtered_flux_bot, aes(x = TPP_Flux_mmolesP_m2_day, y = PON_Flux_mmoles_m2_day)) +
   geom_point(color = "steelblue") +
   geom_smooth(method = "lm", color = "darkred", se = TRUE) +
   geom_abline(slope = 16, intercept = 0, linetype = "dashed", color = "blue", linewidth = .7) +
@@ -605,16 +612,16 @@ ggplot(filtered_flux_bot, aes(x = TPP_Flux_mmolP_m2_day, y = PON_Flux_mmoles_m2_
        y = "PON Flux (mmol N/m²/day)",
        title = "Nitrogen vs. Phosphorus Flux") +
   theme_minimal()
+plot_NtoP_bot
 
-# linear model of Carbon vs. Phosphorous 
+# linear model of Nitrogen vs. Phosphorous 
 
-lm_NP = lm(PON_Flux_mmoles_m2_day ~ TPP_Flux_mmolP_m2_day, data = filtered_flux_bot)
-summary(lm_NP)
+lm_NP_bot = lm(PON_Flux_mmoles_m2_day ~ TPP_Flux_mmolesP_m2_day, data = filtered_flux_bot)
+summary(lm_NP_bot)
 
 # Ratio = 2.6 (much smaller < than Redfield Ratio) 16:1
 
 # Note. when the ratio is smaller than redfield ratio, the dashed ratio line is ABOVE the linear model. when the ratio is is larger than the redfield ratio, the dashed ratio line is BELOW the linear model.
-
 
 # saves some graphs
 ggsave("figures/CtoN_RatioGraph.jpg", plot_CtoN, width = 12, height = 8)
@@ -622,3 +629,4 @@ ggsave("figures/SBB_Bot_Monthly_TotalFlux.jpg",plot_2a,width = 10, height = 8)
 #############################
 
 #Linear Models: modeling over time
+
