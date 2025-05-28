@@ -19,6 +19,7 @@ library(carData)     # cardata (helps clean data)
 library(gridBase)    # gridbase
 library(gridExtra)   # gridextra
 library(patchwork)   # patchwork
+library(broom)
 library(dplyr)       #allows r to process data more easily
 # these last three work together. Can plot multiple  graphs on one page
 
@@ -377,8 +378,9 @@ filtered_flux_top = sbb_top_df %>%
   filter(!is.na(POC_Flux_mmoles_m2_day),
          !is.na(PON_Flux_mmoles_m2_day),
          !is.na(TPP_Flux_umolesP_m2_day))
+###
 
-## Plot of Carbon to Nitrogen
+# Plots of Carbon to Nitrogen
 # create a scatterplot with regression line and added slope line (106:16 = 6.6)
 plot_CtoN_top = ggplot(filtered_flux_top, aes(x = PON_Flux_mmoles_m2_day, y = POC_Flux_mmoles_m2_day )) +
   geom_point(color = "steelblue") +
@@ -394,9 +396,54 @@ plot_CtoN_top
 lm_CN_top = lm(POC_Flux_mmoles_m2_day ~ PON_Flux_mmoles_m2_day, data = filtered_flux_top)
 summary(lm_CN_top)
 
-# ratio = 7.2432 (slightly > than redfield ratio of 6.6)
+# ratio = 7.2432 (slightly > than Redfield Ratio of 6.6)
 
-# Plot of Carbon to Phosphorous
+# facet wrapped by year (CtoN)
+CtoN_by_year = ggplot(filtered_flux_top, aes(x = PON_Flux_mmoles_m2_day, y = POC_Flux_mmoles_m2_day)) +
+  geom_point(color = "steelblue") +
+  geom_smooth(method = "lm", color = "darkred", se = TRUE) +
+  geom_abline(slope = 6.6, intercept = 0, linetype = "dashed", color = "blue", linewidth = 0.7) +
+  labs(x = "PON Flux (mmol/m²/day)",
+       y = "POC Flux (mmol/m²/day)",
+       title = "SBB Top Trap: Carbon vs. Nitrogen Flux by Year") +
+  facet_wrap(~year) +
+  theme_minimal()
+CtoN_by_year
+
+# fitting models by group (CtoN)
+table_of_CN_year = filtered_flux_top %>%
+  group_by(year) %>%
+  filter(!is.na(PON_Flux_mmoles_m2_day), !is.na(POC_Flux_mmoles_m2_day)) %>%
+  do(tidy(lm(POC_Flux_mmoles_m2_day ~ PON_Flux_mmoles_m2_day, data = .)))
+# the result of this code is a table that provides the intercept, slope (ratio), and p-values per year 
+table_of_CN_year
+
+# plots of the ratio in the form of a line.
+# this adds another column of the C to N ratio.
+filtered_flux_top = filtered_flux_top %>%
+  mutate(C_to_N_ratio = POC_Flux_mmoles_m2_day / PON_Flux_mmoles_m2_day)
+
+# this actually plots the line graph. 
+CtoN_ratio_line = ggplot(filtered_flux_top, aes(x = Date_Open, y = C_to_N_ratio)) +
+  geom_line() +
+  geom_smooth(method = "loess") +
+  labs(title = "Time Series of C:N Flux Ratio",
+       x = "Date", y = "C:N Ratio") +
+  theme_minimal()
+CtoN_ratio_line
+
+# plots the ratio in the form of a boxplot
+CtoN_ratio_boxplots = ggplot(filtered_flux_top, aes(x = as.factor(year), y = C_to_N_ratio)) +
+  geom_boxplot(fill = "skyblue") +
+  geom_hline(yintercept = 6.6, linetype = "dashed", color = "blue") +  # Redfield reference
+  labs(title = "C:N Flux Ratio by Year",
+       x = "Year", y = "C:N Ratio") +
+  theme_minimal()
+CtoN_ratio_boxplots
+
+###
+
+# Plots of Carbon to Phosphorous
 # create a scatterplot with regression line and added slope line (106:1 = 106)
 plot_CtoP_top = ggplot(filtered_flux_top, aes(x = TPP_Flux_umolesP_m2_day / 1000, y = POC_Flux_mmoles_m2_day)) +
   geom_point(color = "steelblue") +
@@ -420,9 +467,52 @@ filtered_flux_top = filtered_flux_top %>%
 # linear model of Carbon vs. Phosphorous (data is filtered first, units are converted)
 lm_CP_top= lm(POC_Flux_mmoles_m2_day ~ TPP_Flux_mmolesP_m2_day , data = filtered_flux_top)
 summary(lm_CP_top)
-
-
 # Ratio = 36.1751 (which is much < than Redfield Ratio of 106:1)
+
+# facet wrapped by year (CtoP)
+CtoP_by_year = ggplot(filtered_flux_top, aes(x = TPP_Flux_mmolesP_m2_day, y = POC_Flux_mmoles_m2_day)) +
+  geom_point(color = "steelblue") +
+  geom_smooth(method = "lm", color = "darkred", se = TRUE) +
+  geom_abline(slope = 106, intercept = 0, linetype = "dashed", color = "blue", linewidth = 0.7) +
+  labs(x = "TPP Flux (mmolP/m²/day)",
+       y = "POC Flux (mmol/m²/day)",
+       title = "SBB Top Trap: Carbon vs. Phosphorous Flux by Year") +
+  facet_wrap(~year) +
+  theme_minimal()
+CtoP_by_year
+
+# fitting models by group (CtoP)
+table_of_CP_year = filtered_flux_top %>%
+  group_by(year) %>%
+  filter(!is.na(TPP_Flux_mmolesP_m2_day), !is.na(POC_Flux_mmoles_m2_day)) %>%
+  do(tidy(lm(POC_Flux_mmoles_m2_day ~ TPP_Flux_mmolesP_m2_day, data = .)))
+# the result of this code is a table that provides the intercept, slope (ratio), and p-values per year 
+table_of_CP_year
+
+# plots of the ratio in the form of a line.
+# this adds another column of the C to P ratio.
+filtered_flux_top = filtered_flux_top %>%
+  mutate(C_to_P_ratio = POC_Flux_mmoles_m2_day / TPP_Flux_mmolesP_m2_day)
+
+# this actually plots the line graph. 
+CtoP_ratio_line = ggplot(filtered_flux_top, aes(x = Date_Open, y = C_to_P_ratio)) +
+  geom_line() +
+  geom_smooth(method = "loess") +
+  labs(title = "Time Series of C:P Flux Ratio",
+       x = "Date", y = "C:P Ratio") +
+  theme_minimal()
+CtoP_ratio_line
+
+# plots the ratio in the form of a boxplot
+CtoP_ratio_boxplots = ggplot(filtered_flux_top, aes(x = as.factor(year), y = C_to_P_ratio)) +
+  geom_boxplot(fill = "skyblue") +
+  geom_hline(yintercept = 106, linetype = "dashed", color = "blue") +  # Redfield reference
+  labs(title = "C:P Flux Ratio by Year",
+       x = "Year", y = "C:P Ratio") +
+  theme_minimal()
+CtoP_ratio_boxplots
+
+##################################################
 
 # Plot of Nitrogen to Phosphorous
 # create a scatterplot with regression line and added slope line (16:1 = 16)
@@ -439,8 +529,51 @@ plot_NtoP_top
 # linear model of Nitrogen vs. Phosphorous
 lm_NP_top = lm(PON_Flux_mmoles_m2_day ~ TPP_Flux_mmolesP_m2_day, data = filtered_flux_top)
 summary(lm_NP_top)
-
 # Ratio: 4.31034 (which is < than Redfield Ratio 16:1)
+
+# facet wrapped by year (NtoP)
+NtoP_by_year = ggplot(filtered_flux_top, aes(x = TPP_Flux_mmolesP_m2_day, y = PON_Flux_mmoles_m2_day)) +
+  geom_point(color = "steelblue") +
+  geom_smooth(method = "lm", color = "darkred", se = TRUE) +
+  geom_abline(slope = 16, intercept = 0, linetype = "dashed", color = "blue", linewidth = 0.7) +
+  labs(x = "TPP Flux (mmolP/m²/day)",
+       y = "PON Flux (mmol/m²/day)",
+       title = "SBB Top Trap: Nitrogen vs. Phosphorous Flux by Year") +
+  facet_wrap(~year) +
+  theme_minimal()
+NtoP_by_year
+
+table_of_NP_year = filtered_flux_top %>%
+  group_by(year) %>%
+  filter(!is.na(TPP_Flux_mmolesP_m2_day), !is.na(PON_Flux_mmoles_m2_day)) %>%
+  do(tidy(lm(PON_Flux_mmoles_m2_day ~ TPP_Flux_mmolesP_m2_day, data = .)))
+# the result of this code is a table that provides the intercept, slope (ratio), and p-values per year 
+table_of_NP_year
+
+# plots of the ratio in the form of a line.
+# this adds another column of the C to P ratio.
+filtered_flux_top = filtered_flux_top %>%
+  mutate(N_to_P_ratio = PON_Flux_mmoles_m2_day / TPP_Flux_mmolesP_m2_day) 
+
+# this actually plots the line graph. 
+NtoP_ratio_line = ggplot(filtered_flux_top, aes(x = Date_Open, y = N_to_P_ratio)) +
+  geom_line() +
+  geom_smooth(method = "loess") +
+  labs(title = "Time Series of N:P Flux Ratio",
+       x = "Date", y = "N:P Ratio") +
+  theme_minimal()
+NtoP_ratio_line
+
+# plots the ratio in the form of a boxplot
+NtoP_ratio_boxplots = ggplot(filtered_flux_top, aes(x = as.factor(year), y = N_to_P_ratio)) +
+  geom_boxplot(fill = "skyblue") +
+  geom_hline(yintercept = 16, linetype = "dashed", color = "blue") +  # Redfield reference
+  labs(title = "N:P Flux Ratio by Year",
+       x = "Year", y = "N:P Ratio") +
+  theme_minimal()
+NtoP_ratio_boxplots
+
+##########
 
 ### I don't think any of this works, right above or below ###
 
