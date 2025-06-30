@@ -4,7 +4,7 @@
 #Santa Barbara Basin !TOP TRAP!
 
 # this here takes the data from the excel (we converted it to a csv file) and reads it as a csv and creates our data frame. This is the data frame we will be using throughout the rest of this  r script. I titled it "sbb_bot_boxplots" because it's from the SBB project, is focusing on the bottom trap, and then df stands for data frame. 
-sbb_top_df = read.csv(("data/CSV_files/SBB_Top_Boxplots_moles.csv"), header = TRUE, sep = ",")
+sbb_top_df = read.csv(("data/CSV_files/SBB_SedTrap_Top_Updated.csv"), header = TRUE, sep = ",")
 # this makes it show up in the console.
 sbb_top_df 
 
@@ -26,25 +26,28 @@ library(dplyr)       #allows r to process data more easily
 ######
 
 # here i make the date open column into an as.date format. 
-sbb_top_df$Date_Open = as.Date(sbb_top_df$Date_Open)
+sbb_top_df$Mid_Julian = as.Date(sbb_top_df$Mid_Julian, format = "%d-%b-%y")
+
+unique(sbb_top_df$Mid_Julian)
+str(sbb_top_df$Mid_Julian)
 
 # here i extract all the ~months~ from the Date_Open column (as a two digit string) and store it in a new column called month.
-sbb_top_df$month = format(sbb_top_df$Date_Open,"%m")
+sbb_top_df$month = format(sbb_top_df$Mid_Julian,"%m")
 
 # here i extract all the ~years~ from the Date_Open column (as a two digit string) and store it in a new column called year.
 # use a capital Y to convert to a 4 digit year rather than just a 2 digit year
-sbb_top_df$year = format(sbb_top_df$Date_Open,"%y")
+sbb_top_df$year = format(sbb_top_df$Mid_Julian,"%y")
 
 
 #this line removes missing dates: if rows with missing dates aren't essential, you can remove them with filter (), 
-#This code removes all rows from sbb_top_df where the Date_Open column is NA (missing), ensuring that the dataset contains only rows with valid dates.
+#This code removes all rows from sbb_top_df where the Date_Open column is NA (missing), ensuring that the dataset contains only rows wit valid dates.
 # is.na(Date_Open) is TRUE for rows where Date_Open is missing. ! means "not", so this keeps rows where Date_Open is NOT missing.
 
 # note: the rows went from 353 to 333 meaning 20 rows did not have a date filled out. (this is likely because we have traps where the date got skipped because of clogs and such or because an extra row was added for visual clarify).
-sbb_top_df = sbb_top_df %>% filter(!is.na(Date_Open))
+sbb_top_df = sbb_top_df %>% filter(!is.na(Mid_Julian))
 
 # i just wrote these next three lines to call the information so I could visualize date open, month and year in the console.
-sbb_top_df$Date_Open
+sbb_top_df$Mid_Julian
 sbb_top_df$month
 sbb_top_df$year
 
@@ -84,7 +87,7 @@ CaCO3flux_monthlyavg_sbb_top = sbb_top_df%>%
 
 Opalflux_monthlyavg_sbb_top = sbb_top_df%>% 
   group_by(month) %>% 
-  summarise (Avg_Opal_Flux_mmoles_m2_day_sbb_top = mean(na.omit(OPAL_Flux_mmoles_m2_day)))
+  summarise (Avg_Opal_Flux_mmoles_m2_day_sbb_top = mean(na.omit(Opal_Flux_mmoles_m2_day)))
 
 TPPflux_monthlyavg_sbb_top = sbb_top_df%>% 
   group_by(month) %>% 
@@ -128,7 +131,7 @@ CaCO3flux_yearlyavg_sbb_top = sbb_top_df%>%
 
 Opalflux_yearlyavg_sbb_top = sbb_top_df%>% 
   group_by(year) %>% 
-  summarise (Avg_Opal_Flux_mmoles_m2_day_sbb_top = mean(na.omit(OPAL_Flux_mmoles_m2_day)))
+  summarise (Avg_Opal_Flux_mmoles_m2_day_sbb_top = mean(na.omit(Opal_Flux_mmoles_m2_day)))
 
 TPPflux_yearlyavg_sbb_top = sbb_top_df%>% 
   group_by(year) %>% 
@@ -184,7 +187,7 @@ plot_e = ggplot(sbb_top_df, aes(x = month, y = CaCO3_Flux_mmoles_m2_day)) +
   labs(x = "Month", y = "CaCO3 Flux (mmoles/m^2)/day") +  scale_y_continuous(labels = scales::comma)+
   ggtitle("SBB Top: Monthly Average of CaCO3 Flux")
 
-plot_f = ggplot(sbb_top_df, aes(x = month, y = OPAL_Flux_mmoles_m2_day)) +
+plot_f = ggplot(sbb_top_df, aes(x = month, y = Opal_Flux_mmoles_m2_day)) +
   geom_boxplot() +
   stat_summary(fun = mean, geom = "point", shape = 21, size = 2, fill = "red") +
   stat_summary(fun.data = mean_cl_normal, geom = "errorbar", width = 0.2, color = "black") +
@@ -249,7 +252,7 @@ plot_n = ggplot(sbb_top_df, aes(x = year, y = CaCO3_Flux_mmoles_m2_day)) +
   labs(x = "Year", y = "CaCO3 Flux (mmoles/m^2/day)") + scale_y_continuous(labels = scales::comma)+
   ggtitle("SBB Top: Yearly Average of CaCO3 Flux")
 
-plot_o = ggplot(sbb_top_df, aes(x = year, y = OPAL_Flux_mmoles_m2_day)) +
+plot_o = ggplot(sbb_top_df, aes(x = year, y = Opal_Flux_mmoles_m2_day)) +
   geom_boxplot() +
   stat_summary(fun = mean, geom = "point", shape = 21, size = 2, fill = "red") +
   stat_summary(fun.data = mean_cl_normal, geom = "errorbar", width = 0.2, color = "black") +
@@ -424,7 +427,7 @@ filtered_flux_top = filtered_flux_top %>%
   mutate(C_to_N_ratio = POC_Flux_mmoles_m2_day / PON_Flux_mmoles_m2_day)
 
 # this actually plots the line graph. 
-CtoN_ratio_line = ggplot(filtered_flux_top, aes(x = Date_Open, y = C_to_N_ratio)) +
+CtoN_ratio_line = ggplot(filtered_flux_top, aes(x = Mid_Julian, y = C_to_N_ratio)) +
   geom_line() +
   geom_smooth(method = "loess") +
   labs(title = "Time Series of C:N Flux Ratio",
@@ -495,7 +498,7 @@ filtered_flux_top = filtered_flux_top %>%
   mutate(C_to_P_ratio = POC_Flux_mmoles_m2_day / TPP_Flux_mmolesP_m2_day)
 
 # this actually plots the line graph. 
-CtoP_ratio_line = ggplot(filtered_flux_top, aes(x = Date_Open, y = C_to_P_ratio)) +
+CtoP_ratio_line = ggplot(filtered_flux_top, aes(x = Mid_Julian, y = C_to_P_ratio)) +
   geom_line() +
   geom_smooth(method = "loess") +
   labs(title = "Time Series of C:P Flux Ratio",
@@ -556,7 +559,7 @@ filtered_flux_top = filtered_flux_top %>%
   mutate(N_to_P_ratio = PON_Flux_mmoles_m2_day / TPP_Flux_mmolesP_m2_day) 
 
 # this actually plots the line graph. 
-NtoP_ratio_line = ggplot(filtered_flux_top, aes(x = Date_Open, y = N_to_P_ratio)) +
+NtoP_ratio_line = ggplot(filtered_flux_top, aes(x = Mid_Julian, y = N_to_P_ratio)) +
   geom_line() +
   geom_smooth(method = "loess") +
   labs(title = "Time Series of N:P Flux Ratio",
@@ -573,48 +576,139 @@ NtoP_ratio_boxplots = ggplot(filtered_flux_top, aes(x = as.factor(year), y = N_t
   theme_minimal()
 NtoP_ratio_boxplots
 
-##########
+###############
 
-### I don't think any of this works, right above or below ###
+# Overall, this code helps us pull out specific outliers and puts them into a table so that we can then identify outliers. 
+
+## STEP 1: Define which columns we want to analyze. Creating a vector of the column names I want to check for outliers. This avoids hardcoding them repeatedly
+flux_variables = c(
+  "Total_Mass_Flux_g_m2_day",
+  "Terrigenous_Flux_g_m2_day",
+  "PON_Flux_mmoles_m2_day", 
+  "POC_Flux_mmoles_m2_day",
+  "CaCO3_Flux_mmoles_m2_day",
+  "Opal_Flux_mmoles_m2_day",
+  "TPP_Flux_umolesP_m2_day",
+  "PIP_Flux_umolesP_m2_day",
+  "POP_Flux_umolesP_m2_day")
+
+# STEP 2: Copy original data
+# a working copy of the original dataframe, sbb_top_df, so it is not accidentally overwriten or modified during processing.
+all_data_outliers = sbb_top_df
+
+# STEP 3: This makes an empty data frame where we can store the outlier results (T/F).
+outlier_flags = data.frame(Mid_Julian = all_data_outliers$Mid_Julian)
+# Step 3a: This makes an empty data frame where we can store the outlier types (high/low) or NA if it is not an outlier.
+outlier_direction_flags = data.frame(Mid_Julian = all_data_outliers$Mid_Julian)
+
+# STEP 4: This code loops through each variable in flux variables to calculate the IQR based outliers. 
+# First it calculates the IQR for each variable, then defines what the cutoff is for the outlier. it will be flagged and stored.
+for (var in flux_variables) {
+  # 4a check if the variable exists
+  if (var %in% names(all_data_outliers)) {
+    # 4b. Calculate IQR components
+    Q1 <- quantile(all_data_outliers[[var]], 0.25, na.rm = TRUE)
+    Q3 <- quantile(all_data_outliers[[var]], 0.75, na.rm = TRUE)
+    IQR <- Q3 - Q1
+    # 4c. Define bounds for outliers
+    lower_bound <- Q1 - 1.5 * IQR
+    upper_bound <- Q3 + 1.5 * IQR
+    # 4d. Flag outliers (TRUE/FALSE)
+    values <- all_data_outliers[[var]]
+    is_outlier <- values < lower_bound | values > upper_bound
+    # Save TRUE/FALSE flags
+    outlier_flags[[paste0(var, "_outlier")]] <- is_outlier
+    # Save direction of outliers (only where TRUE)
+    outlier_type <- ifelse(values < lower_bound, "low",
+                           ifelse(values > upper_bound, "high", NA))
+    outlier_direction_flags[[paste0(var, "_outlier_type")]] <- outlier_type
+  } else {
+    warning(paste("Variable", var, "not found in the dataframe"))
+  }
+}
+
+
+#  STEP 5. Pivot the wide-format data to a long format. (excluding the date column)
+# this takes the selected flux columns and "stacks" them into two columns 1) variable: the name of the flux/column name and 2) value: the actual number for that variable
+
+flux_long = all_data_outliers %>%
+  pivot_longer(
+    cols = c( "Total_Mass_Flux_g_m2_day",
+              "Terrigenous_Flux_g_m2_day",
+              "PON_Flux_mmoles_m2_day", 
+              "POC_Flux_mmoles_m2_day",
+              "CaCO3_Flux_mmoles_m2_day",
+              "Opal_Flux_mmoles_m2_day",
+              "TPP_Flux_umolesP_m2_day",
+              "PIP_Flux_umolesP_m2_day",
+              "POP_Flux_umolesP_m2_day"),
+    names_to = "variable",
+    values_to = "value"
+  )
+
+# STEP 6: Pivot the outlier_flags frame (excluding the date)
+# this turns the wide-format outlier flag data frame into two columns 1) variable 2) is_outlier (t/f). 
+# the sub("_outlier", "", variable) removes "_outlier suffix so it matches the original flux variable names in flux_long. 
+outlier_flags_long <- outlier_flags %>%
+  pivot_longer(
+    cols = c( "Total_Mass_Flux_g_m2_day_outlier",
+              "Terrigenous_Flux_g_m2_day_outlier",
+              "PON_Flux_mmoles_m2_day_outlier", 
+              "POC_Flux_mmoles_m2_day_outlier",
+              "CaCO3_Flux_mmoles_m2_day_outlier",
+              "Opal_Flux_mmoles_m2_day_outlier",
+              "TPP_Flux_umolesP_m2_day_outlier",
+              "PIP_Flux_umolesP_m2_day_outlier",
+              "POP_Flux_umolesP_m2_day_outlier"),
+    names_to = "variable",
+    values_to = "is_outlier"
+  ) %>%
+  # Remove the "_outlier" suffix to match variable names
+  mutate(variable = sub("_outlier", "", variable))
+
+# STEP 6B: This does the same thing but for the outlier_type_long determining the variable to be the type of flux and the values to be the type of outlier (high/low)
+outlier_type_long <- outlier_direction_flags %>%
+  pivot_longer(
+    cols = -Mid_Julian,
+    names_to = "variable",
+    values_to = "outlier_type"
+  ) %>%
+  mutate(variable = sub("_outlier_type", "", variable))
+
+
+# STEP 7. Join the long data + flags
+# this combines the flux_long data frame (with the actual values) and the outlier_flags_long data frame (with the t/f) by the common factors of Mid_Julian and variable. 
+# the result should be one long table with... 1) Mid_Julian, 2) variable, 3) value, is_outlier.
+
+flux_outlier_joined <- flux_long %>%
+  left_join(outlier_flags_long, by = c("Mid_Julian", "variable")) %>%
+  left_join(outlier_type_long, by = c("Mid_Julian", "variable"))
+
+# STEP 8: Filter to keep only the actual outlier values
+# this filters the rows to only show when is_outlier == TRUE and sorts the result by variable and date. 
+outlier_table <- flux_outlier_joined %>%
+  select(Sample_ID, Mid_Julian, variable, value, is_outlier, outlier_type) %>%
+  filter(is_outlier == TRUE) %>%
+  arrange(variable, Mid_Julian)
+
+# Summary: 
+# pivot_longer()- reshapes the wide columns into a long format
+# sub("_outlier","", ...)- aligns the variable names for joining.
+# left_join()- combines the values and flags data set into one table
+# filter(is_outlier == TRUE)- keep just the rows 
+
+# the final table shows... 1) which sample was an outlier, 2) on what date, 3) for what variable, 4) with what value, 5) and whether it was a high or low outlier.\
+
+#################
+
+## Now pull out monthly outliers rather than just "global" outliers.
+
+
+
+##############################################
+
+### I don't think any of this works, right below ###
 
 ## Experimenting with Time Series of Total Mass Flux ##
 
-#library(ggplot2)
-#library(dplyr)
-
-# Identify outliers using IQR method
-sbb_top_boxplots = sbb_top_df %>%
-  mutate(Q1 = quantile(Total_Mass_Flux_g_m2_day, 0.25, na.rm = TRUE),
-         Q3 = quantile(Total_Mass_Flux_g_m2_day, 0.75, na.rm = TRUE),
-         IQR = Q3 - Q1,
-         is_outlier = Total_Mass_Flux_g_m2_day < (Q1 - 1.5 * IQR) |
-           Total_Mass_Flux_g_m2_day > (Q3 + 1.5 * IQR))
-
-# Create the time series plot
-plot_mass_flux_outlier = ggplot(sbb_top_df, aes(x = Date_Open, y = Total_Mass_Flux_g_m2_day)) +
-  geom_line(color = "blue", na.rm = TRUE,) +  # Trend line
-  geom_point(data = filter(sbb_top_df, is_outlier), aes(x = Date_Open, y = Total_Mass_Flux_g_m2_day), color = "red", size = 2) +  # Highlight outliers
-  labs(title = "Time Series of Total Mass Flux with Outliers",
-       x = "Date", y = "Total Mass Flux (g/m²/day)") +
-  theme_minimal()
-
-plot_mass_flux_outlier
-
-######
-
 # Experimenting with comparing Monthly vs. Yearly Trends in One Plot
-
-sbb_top_boxplots = sbb_top_df %>%
-  mutate(TimePeriod = factor(ifelse(!is.na(month), paste("Month:", month), paste("Year:", year)), levels = unique(c(paste("Month:", 1:12), paste("Year:", unique(year))))))
-
-# Combined boxplot for Monthly and Yearly Trends
-plot_combined_boxplot = ggplot(sbb_top_df, aes(x = TimePeriod, y = Total_Mass_Flux_g_m2_day, fill = TimePeriod)) +
-  geom_boxplot() +
-  stat_summary(fun = mean, geom = "point", shape = 21, size = 2, fill = "red") +
-  facet_wrap(~Constituent, scales = "free_y") +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +  # Rotate x-axis labels
-  labs(title = "Comparison of Monthly vs. Yearly Trends",
-       x = "Time Period", y = "Total Mass Flux (g/m²/day)") +
-  theme_minimal()
-
-print(plot_combined_boxplot)
