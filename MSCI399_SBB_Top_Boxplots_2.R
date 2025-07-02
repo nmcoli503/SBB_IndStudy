@@ -3,14 +3,14 @@
 
 #Santa Barbara Basin !TOP TRAP!
 
-# this here takes the data from the excel (we converted it to a csv file) and reads it as a csv and creates our data frame. This is the data frame we will be using throughout the rest of this  r script. I titled it "sbb_bot_boxplots" because it's from the SBB project, is focusing on the bottom trap, and then df stands for data frame. 
+# this takes the data from the excel (converted to a csv file), reads it as a csv, and creates our data frame. This is the data frame we will be using throughout the rest of this  r script. I titled it "sbb_top_df" because it's from the SBB project, is focusing on the top trap, and then df stands for data frame. 
 sbb_top_df = read.csv(("data/CSV_files/SBB_SedTrap_Top_Updated.csv"), header = TRUE, sep = ",")
 # this makes it show up in the console.
 sbb_top_df 
 
 ######
 
-# here i loaded all my libraries. previously these have been downloaded and installed which is what i only loaded them here. 
+# here i loaded all my libraries. previously these have been downloaded and installed which is why i have only loaded them here. 
 
 library(ggplot2)
 library(lubridate)
@@ -35,35 +35,34 @@ str(sbb_top_df$Mid_Julian)
 sbb_top_df$month = format(sbb_top_df$Mid_Julian,"%m")
 
 # here i extract all the ~years~ from the Date_Open column (as a two digit string) and store it in a new column called year.
-# use a capital Y to convert to a 4 digit year rather than just a 2 digit year
-sbb_top_df$year = format(sbb_top_df$Mid_Julian,"%y")
-
+# note: use a capital Y to convert to a 4 digit year rather than just a 2 digit year
+sbb_top_df$year = format(sbb_top_df$Mid_Julian,"%Y")
 
 #this line removes missing dates: if rows with missing dates aren't essential, you can remove them with filter (), 
-#This code removes all rows from sbb_top_df where the Date_Open column is NA (missing), ensuring that the dataset contains only rows wit valid dates.
-# is.na(Date_Open) is TRUE for rows where Date_Open is missing. ! means "not", so this keeps rows where Date_Open is NOT missing.
+#This code removes all rows from sbb_top_df where the Mid_Julian column is NA (missing), ensuring that the dataset contains only rows with valid dates.
+# is.na(Mid_Julian) is TRUE for rows where Mid_Julian is missing. ! means "not", so this keeps rows where Date_Open is NOT missing.
 
-# note: the rows went from 353 to 333 meaning 20 rows did not have a date filled out. (this is likely because we have traps where the date got skipped because of clogs and such or because an extra row was added for visual clarify).
-sbb_top_df = sbb_top_df %>% filter(!is.na(Mid_Julian))
+# note: the rows went from 353 to 332 meaning 20 rows did not have a date filled out. (this is likely because we have traps where the date got skipped because of clogs and such or because an extra row was added for visual clarity. (one of the rows had 2000 in the date SBB 55-13, i adjusted it quick in R rather than resave another CSV. It was a typo; NMC 6/30/25)
+sbb_top_df = sbb_top_df %>% filter(!is.na(Mid_Julian) & year != "2000")
 
-# i just wrote these next three lines to call the information so I could visualize date open, month and year in the console.
+# i just wrote these next three lines to call the information so i could visualize date open, month and year in the console.
 sbb_top_df$Mid_Julian
 sbb_top_df$month
 sbb_top_df$year
 
 ######
 
-# this code calculates the average total mass flux for each month from the sbb_bot_df dataset (ignoring missing values) and then stores the result in a new data frame called total_massflux_monthlyavg_sbb_bot.
+# this code calculates the average total mass flux for each month from the sbb_top_df dataset (ignoring missing values) and then stores the result in a new data frame called total_massflux_monthlyavg_sbb_bot.
 
-# %>% is a pipe operator form the dplyr package that passes the dataframe sbb_top_boxplots to the next part of the code. 
+# %>% is a pipe operator from the dplyr package that passes the dataframe sbb_top_df to the next part of the code. 
 
-# group_by(month) groups the data in the sbb_top_boxplots dataframe and groups it based on month. 
+# group_by(month) groups the data in the sbb_top_df  and groups it based on month. 
 
 # summarise creates a summary statistic for each group. in this case we calcualte a new column in this example called "Avg_Total_Flux_sbb_top to hold the average of the Total_Mass_Flux_g_m2_day values. 
 
 # finally mean() computes the averages of the Total_Mass_Flux_g_m2_day values for each month and na.omit omits missing values so it doesn't affect the mean calculation. 
 
-# the successive lines do the same thing for each constituient. 1) total mass flux, 2) terig flux, 3) PON flux, 4) POC flux, 5) CaCO3 flux, 6) Opal flux, 7) TPP flux, 8) PIP flux, 9) POP flux. After running this section there should be 9 data frames each with two columns --> one column is labelled 1-12 for each month of the year, and the second column is the averaged value of each month throughout the entire time frame of the dataset (all 32 years).
+# the successive lines do the same thing for each constituient. 1) total mass flux, 2) terig flux, 3) PON flux, 4) POC flux, 5) CaCO3 flux, 6) Opal flux, 7) TPP flux, 8) PIP flux, 9) POP flux. After running this section there should be 9 data frames each with two columns --> one column is labelled 1-12 for each month of the year, and the second column is the averaged value of each month throughout the entire time frame of the dataset (all 16 years since this is just top).
 
 totalmassflux_monthlyavg_sbb_top = sbb_top_df%>% 
   group_by(month) %>% 
@@ -101,13 +100,17 @@ POPflux_monthlyavg_sbb_top = sbb_top_df%>%
   group_by(month) %>% 
   summarise (Avg_POP_Flux_umolesP_m2_day_sbb_top = mean(na.omit(POP_Flux_umolesP_m2_day)))
 
-######
+####################################
 
 # this is the same but groups by year to find YEARLY average rather than monthly. 
 
-# this code calculates the average total mass flux for each year from the sbb_bot_df dataset (ignoring missing values) and then stores the result in a new data frame called totalmassflux_yearlyavg_sbb_bot.
+# this code calculates the average total mass flux for each year from the sbb_top_df dataset (ignoring missing values) and then stores the result in a new data frame called totalmassflux_yearlyavg_sbb_top.
 
 # the successive lines do the same thing for each constituient. 1) total mass flux, 2) terig flux, 3) PON flux, 4) POC flux, 5) CaCO3 flux, 6) Opal flux, 7) TPP flux, 8) PIP flux, 9) POP flux. After running this section there should be 9 data frames each with two columns --> one column is labelled a year (1993-2024) for each year in the 32 year dataset, and the second column is the averaged value of each year (incorporating all the months from that entire year).
+
+unique(sbb_top_df$year)
+sbb_top_df %>% filter(is.na(Mid_Julian) | Mid_Julian == "" | year == "2000")
+
 
 totalmassflux_yearlyavg_sbb_top = sbb_top_df%>% 
   group_by(year) %>% 
@@ -143,14 +146,14 @@ PIPflux_yearlyavg_sbb_top = sbb_top_df%>%
 
 POPflux_yearlyavg_sbb_top = sbb_top_df%>% 
   group_by(year) %>% 
-  summarise (Avg_POP_Flux_umolesP_m2_day_sbb_top = mean(na.omit(POP_Flux_umolesP_m2_day)))
+  summarise (Avg_POP_Flux_umolesP_m2_day_sbb_top = mean(POP_Flux_umolesP_m2_day,na.rm=TRUE))
 
-######
+#####################################
 
 #str(sbb_top_df)
 #class(month)
 
-# this code begins to plot it all. it creates a boxplot of Total_Mass_Flux_g_m2_day by month using the sbb_bot_df dataset. It also adds the monthly mean as red dots and error bars showing confidence intervals around those means. The plot is styled with labels and a formatted y-axis. a-i represents the first set of 9 constituents for the monthly graphs. 
+# this code begins to plot it all. it creates a boxplot of Total_Mass_Flux_g_m2_day by month using the sbb_top_df dataset. It also adds the monthly mean as red dots and error bars showing confidence intervals around those means. The plot is styled with labels and a formatted y-axis. a-i represents the first set of 9 constituents for the monthly graphs. j-r represents the second set off 9 constitudents for the yearly graphs.
 
 plot_a = ggplot(sbb_top_df, aes(x = month, y = Total_Mass_Flux_g_m2_day)) +
   geom_boxplot() +
@@ -215,7 +218,7 @@ plot_i = ggplot(data = sbb_top_df, aes(x = month, y = POP_Flux_umolesP_m2_day)) 
   labs(x = "Month", y = "POP Flux (umoles/m^2/day)") +  scale_y_continuous(labels = scales::comma)+
   ggtitle("SBB Top: Monthly Average of POP Flux")
 
-######
+#################
 
 plot_j = ggplot(sbb_top_df, aes(x = year, y = Total_Mass_Flux_g_m2_day)) +
   geom_boxplot() +
@@ -325,6 +328,13 @@ ggsave("figures/SBBTop_Monthly_Carbonate_Opal.pdf", plot = plot_e_f, width = 10,
 ggsave("figures/SBBTop_Monthly_TPP_PIP.pdf", plot = plot_g_h, width = 10, height = 8)
 ggsave("figures/SBBTop_Monthly_POP.pdf", plot = plot_i, width = 10, height = 8)
 
+# this code saves them as a PDF.
+ggsave("figures/SBBTop_Monthly_Total_Terrig.png", plot = plot_a_b, width = 10, height = 8)
+ggsave("figures/SBBTop_Monthly_PON_POC.png", plot = plot_c_d, width = 10, height = 8)
+ggsave("figures/SBBTop_Monthly_Carbonate_Opal.png", plot = plot_e_f, width = 10, height = 8)
+ggsave("figures/SBBTop_Monthly_TPP_PIP.png", plot = plot_g_h, width = 10, height = 8)
+ggsave("figures/SBBTop_Monthly_POP.png", plot = plot_i, width = 10, height = 8)
+
 ######
 # # just plots 3 at a time; total, terrig, PON
 grid.arrange(plot_a,plot_b,plot_c, nrow=1,ncol=3)
@@ -366,32 +376,37 @@ plot_r = grid.arrange(plot_r,nrow=1,ncol=1)
 plot_r
 
 # saves as PDF again.
-ggsave("figures/SBBTop_Yearly_Total_Terrig.pdf", plot = plot_j_k, width = 10, height = 8)
-ggsave("figures/SBBTop_Yearly_PON_POC.pdf", plot = plot_l_m, width = 10, height = 8)
-ggsave("figures/SBBTop_Yearly_Carbonate_Opal.pdf", plot = plot_n_o, width = 10, height = 8)
-ggsave("figures/SBBTop_Yearly_TPP_PIP.pdf", plot = plot_p_q, width = 10, height = 8)
-ggsave("figures/SBBTop_Yearly_POP.pdf", plot = plot_r, width = 10, height = 8)
+ggsave("figures/SBBTop_Yearly_Total_Terrig.png", plot = plot_j_k, width = 10, height = 8)
+ggsave("figures/SBBTop_Yearly_PON_POC.png", plot = plot_l_m, width = 10, height = 8)
+ggsave("figures/SBBTop_Yearly_Carbonate_Opal.png", plot = plot_n_o, width = 10, height = 8)
+ggsave("figures/SBBTop_Yearly_TPP_PIP.png", plot = plot_p_q, width = 10, height = 8)
+ggsave("figures/SBBTop_Yearly_POP.png", plot = plot_r, width = 10, height = 8)
 
-######
+########################
+########################
+########################
 
-## CNP Ratios ##
+## C:N:P RATIOS ##
+
+#install.packages("emmeans") # if not already installed
+library(emmeans)
 
 # filters out rows with missing values. keeps only rows where POC, PON, and TPP flux values are present (i.e., not NA). stores the filtered result in filtered_flux_bot data frame.
 filtered_flux_top = sbb_top_df %>%
   filter(!is.na(POC_Flux_mmoles_m2_day),
          !is.na(PON_Flux_mmoles_m2_day),
          !is.na(TPP_Flux_umolesP_m2_day))
-###
 
-# Plots of Carbon to Nitrogen
-# create a scatterplot with regression line and added slope line (106:16 = 6.6)
+# PLOTS OF CARBON TO NITROGEN
+
+# creates a scatterplot with a regression line and added slope line (106:16 = 6.6)
 plot_CtoN_top = ggplot(filtered_flux_top, aes(x = PON_Flux_mmoles_m2_day, y = POC_Flux_mmoles_m2_day )) +
   geom_point(color = "steelblue") +
   geom_smooth(method = "lm", color = "darkred", se = TRUE)+
   geom_abline(slope = 6.6, intercept = 0, linetype = "dashed", color = "blue", linewidth = .7) +
   labs(x = "PON Flux (mmol/m²/day)",
        y = "POC Flux (mmol/m²/day)",
-       title = "Carbon vs. Nitrogen Flux") +
+       title = "SBB TOP: Carbon vs. Nitrogen Flux") +
   theme_minimal()
 plot_CtoN_top
 
@@ -399,7 +414,9 @@ plot_CtoN_top
 lm_CN_top = lm(POC_Flux_mmoles_m2_day ~ PON_Flux_mmoles_m2_day, data = filtered_flux_top)
 summary(lm_CN_top)
 
-# ratio = 7.2432 (slightly > than Redfield Ratio of 6.6)
+# ratio = 7.63005 (slightly > than Redfield Ratio of 6.6)
+# adjusted r-squared: 0.946 
+# p value = < 2.2e-16
 
 # facet wrapped by year (CtoN)
 CtoN_by_year = ggplot(filtered_flux_top, aes(x = PON_Flux_mmoles_m2_day, y = POC_Flux_mmoles_m2_day)) +
@@ -408,7 +425,7 @@ CtoN_by_year = ggplot(filtered_flux_top, aes(x = PON_Flux_mmoles_m2_day, y = POC
   geom_abline(slope = 6.6, intercept = 0, linetype = "dashed", color = "blue", linewidth = 0.7) +
   labs(x = "PON Flux (mmol/m²/day)",
        y = "POC Flux (mmol/m²/day)",
-       title = "SBB Top Trap: Carbon vs. Nitrogen Flux by Year") +
+       title = "SBB Top: Carbon vs. Nitrogen Flux by Year") +
   facet_wrap(~year) +
   theme_minimal()
 CtoN_by_year
@@ -421,6 +438,68 @@ table_of_CN_year = filtered_flux_top %>%
 # the result of this code is a table that provides the intercept, slope (ratio), and p-values per year 
 table_of_CN_year
 
+table_of_CN_slope <- filtered_flux_top %>%
+  filter(!is.na(POC_Flux_mmoles_m2_day), !is.na(PON_Flux_mmoles_m2_day)) %>%
+  group_by(year) %>%
+  do(tidy(lm(POC_Flux_mmoles_m2_day ~ PON_Flux_mmoles_m2_day, data = .))) %>%
+  ungroup() %>%
+  filter(term == "PON_Flux_mmoles_m2_day") %>%
+  select(year,
+         slope = estimate,
+         pval_slope = p.value,
+         stderr_slope = std.error)
+table_of_CN_slope
+
+write.table(table_of_CN_slope, "clipboard", sep = "\t", row.names = FALSE)
+
+
+# Significance of Slopes
+
+# C:N Interaction Model
+model_interaction_C_N = lm(POC_Flux_mmoles_m2_day ~ PON_Flux_mmoles_m2_day * factor(year), data = filtered_flux_top)
+summary(model_interaction_C_N)
+
+model_no_interaction_C_N = lm(POC_Flux_mmoles_m2_day ~ PON_Flux_mmoles_m2_day + factor(year), data = filtered_flux_top)
+
+anova(model_no_interaction_C_N, model_interaction_C_N)
+# justified to move on? yes!
+
+# C:N Emmeans
+# get estimated slopes of POC ~ PON for each year.
+# Compare C:N ratios (as slopes) by year
+emtrends_C_N = emtrends(model_interaction_C_N, specs = "year", var = "PON_Flux_mmoles_m2_day")
+
+
+pairs(emtrends_C_N, adjust = "tukey")
+# this line of code... 1) Compares the C:N slopes between all pairs of years, 2) Tells you whether the difference in slope between (e.g.) 2010 and 2015 is statistically significant, 3) Adjusts the p-values to avoid false positives due to multiple comparisons
+
+pairs(emtrends_C_N, adjust = "tukey") %>%
+  as.data.frame() %>%
+  mutate(sig = case_when(
+    p.value < 0.001 ~ "***",
+    p.value < 0.01  ~ "**",
+    p.value < 0.05  ~ "*",
+    p.value < 0.1   ~ ".",
+    TRUE ~ ""
+  )) %>%
+  select(contrast, estimate, p.value, sig)
+
+intercept_emmeans_C_N = emmeans(model_interaction_C_N, specs = "year")
+pairs(intercept_emmeans_C_N, adjust = "tukey")  # pairwise intercept comparisons
+
+
+plot_data = as.data.frame(emtrends_C_N)
+
+ggplot(plot_data, aes(x = year, y = estimate)) +
+  geom_point(size = 3) +
+  geom_errorbar(aes(ymin = estimate - SE, ymax = estimate + SE), width = 0.2) +
+  ylab("C:N Ratio (Slope of POC ~ PON)") +
+  xlab("Year") +
+  theme_minimal() +
+  ggtitle("Estimated C:N Slopes by Year") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
 # plots of the ratio in the form of a line.
 # this adds another column of the C to N ratio.
 filtered_flux_top = filtered_flux_top %>%
@@ -430,7 +509,7 @@ filtered_flux_top = filtered_flux_top %>%
 CtoN_ratio_line = ggplot(filtered_flux_top, aes(x = Mid_Julian, y = C_to_N_ratio)) +
   geom_line() +
   geom_smooth(method = "loess") +
-  labs(title = "Time Series of C:N Flux Ratio",
+  labs(title = "SBB Top: C:N Flux Ratio Time Series",
        x = "Date", y = "C:N Ratio") +
   theme_minimal()
 CtoN_ratio_line
@@ -439,14 +518,15 @@ CtoN_ratio_line
 CtoN_ratio_boxplots = ggplot(filtered_flux_top, aes(x = as.factor(year), y = C_to_N_ratio)) +
   geom_boxplot(fill = "skyblue") +
   geom_hline(yintercept = 6.6, linetype = "dashed", color = "blue") +  # Redfield reference
-  labs(title = "C:N Flux Ratio by Year",
+  labs(title = "SBB Top: C:N Flux Ratio by Year Boxplots",
        x = "Year", y = "C:N Ratio") +
   theme_minimal()
 CtoN_ratio_boxplots
 
-###
+#########################################
 
-# Plots of Carbon to Phosphorous
+## PLOTS OF CARBON TO PHOSPHOROUS ##
+
 # create a scatterplot with regression line and added slope line (106:1 = 106)
 plot_CtoP_top = ggplot(filtered_flux_top, aes(x = TPP_Flux_umolesP_m2_day / 1000, y = POC_Flux_mmoles_m2_day)) +
   geom_point(color = "steelblue") +
@@ -454,7 +534,7 @@ plot_CtoP_top = ggplot(filtered_flux_top, aes(x = TPP_Flux_umolesP_m2_day / 1000
   geom_abline(slope = 106, intercept = 0, linetype = "dashed", color = "blue", linewidth = .7) +
   labs(x = "TPP Flux (mmolP/m²/day)",
        y = "POC Flux (mmol/m²/day)",
-       title = "Carbon vs. Phosphorous Flux") +
+       title = "SBB Top: Carbon vs. Phosphorous Flux") +
   theme_minimal()
 plot_CtoP_top
 
@@ -470,7 +550,9 @@ filtered_flux_top = filtered_flux_top %>%
 # linear model of Carbon vs. Phosphorous (data is filtered first, units are converted)
 lm_CP_top= lm(POC_Flux_mmoles_m2_day ~ TPP_Flux_mmolesP_m2_day , data = filtered_flux_top)
 summary(lm_CP_top)
-# Ratio = 36.1751 (which is much < than Redfield Ratio of 106:1)
+# Ratio = 36.1745 (which is much < than Redfield Ratio of 106:1)
+# adjusted r-squared: 0.5605
+# p value = < 2.2e-16
 
 # facet wrapped by year (CtoP)
 CtoP_by_year = ggplot(filtered_flux_top, aes(x = TPP_Flux_mmolesP_m2_day, y = POC_Flux_mmoles_m2_day)) +
@@ -492,6 +574,55 @@ table_of_CP_year = filtered_flux_top %>%
 # the result of this code is a table that provides the intercept, slope (ratio), and p-values per year 
 table_of_CP_year
 
+table_of_CP_slope <- filtered_flux_top %>%
+  filter(!is.na(TPP_Flux_mmolesP_m2_day), !is.na(POC_Flux_mmoles_m2_day)) %>%
+  group_by(year) %>%
+  do(tidy(lm(POC_Flux_mmoles_m2_day ~ TPP_Flux_mmolesP_m2_day, data = .))) %>%
+  ungroup() %>%
+  filter(term == "TPP_Flux_mmolesP_m2_day") %>%
+  select(year,
+         slope = estimate,
+         pval_slope = p.value,
+         stderr_slope = std.error)
+table_of_CP_slope
+
+write.table(table_of_CP_slope, "clipboard", sep = "\t", row.names = FALSE)
+
+# Significance of Slopes
+
+# C:P Interaction Model
+model_interaction_C_P = lm(POC_Flux_mmoles_m2_day ~ TPP_Flux_mmolesP_m2_day * factor(year), data = filtered_flux_top)
+summary(model_interaction_C_P)
+
+model_no_interaction_C_P = lm(POC_Flux_mmoles_m2_day ~ TPP_Flux_mmolesP_m2_day + factor(year), data = filtered_flux_top)
+
+anova(model_no_interaction_C_P, model_interaction_C_P)
+# justified to move on? yes!
+
+# C:P Emmeans
+# get estimated slopes of POC ~ PON for each year.
+# Compare C:N ratios (as slopes) by year
+emtrends_C_P = emtrends(model_interaction_C_P, specs = "year", var = "TPP_Flux_mmolesP_m2_day")
+
+
+pairs(emtrends_C_P, adjust = "tukey")
+# this line of code... 1) Compares the C:N slopes between all pairs of years, 2) Tells you whether the difference in slope between (e.g.) 2010 and 2015 is statistically significant, 3) Adjusts the p-values to avoid false positives due to multiple comparisons
+
+pairs(emtrends_C_P, adjust = "tukey") %>%
+  as.data.frame() %>%
+  mutate(sig = case_when(
+    p.value < 0.001 ~ "***",
+    p.value < 0.01  ~ "**",
+    p.value < 0.05  ~ "*",
+    p.value < 0.1   ~ ".",
+    TRUE ~ ""
+  )) %>%
+  select(contrast, estimate, p.value, sig)
+
+intercept_emmeans_C_P = emmeans(model_interaction_C_P, specs = "year")
+pairs(intercept_emmeans_C_P, adjust = "tukey")  # pairwise intercept comparisons
+
+
 # plots of the ratio in the form of a line.
 # this adds another column of the C to P ratio.
 filtered_flux_top = filtered_flux_top %>%
@@ -501,7 +632,7 @@ filtered_flux_top = filtered_flux_top %>%
 CtoP_ratio_line = ggplot(filtered_flux_top, aes(x = Mid_Julian, y = C_to_P_ratio)) +
   geom_line() +
   geom_smooth(method = "loess") +
-  labs(title = "Time Series of C:P Flux Ratio",
+  labs(title = "SBB Top: C:P Flux Ratio Time Series",
        x = "Date", y = "C:P Ratio") +
   theme_minimal()
 CtoP_ratio_line
@@ -510,14 +641,15 @@ CtoP_ratio_line
 CtoP_ratio_boxplots = ggplot(filtered_flux_top, aes(x = as.factor(year), y = C_to_P_ratio)) +
   geom_boxplot(fill = "skyblue") +
   geom_hline(yintercept = 106, linetype = "dashed", color = "blue") +  # Redfield reference
-  labs(title = "C:P Flux Ratio by Year",
+  labs(title = "SBB Top: C:P Flux Ratio by Year Boxplots",
        x = "Year", y = "C:P Ratio") +
   theme_minimal()
 CtoP_ratio_boxplots
 
 ##################################################
 
-# Plot of Nitrogen to Phosphorous
+## PLOTS OF NITROGEN TO PHOSPHOROUS ##
+
 # create a scatterplot with regression line and added slope line (16:1 = 16)
 plot_NtoP_top = ggplot(filtered_flux_top, aes(x = TPP_Flux_mmolesP_m2_day, y = PON_Flux_mmoles_m2_day)) +
   geom_point(color = "steelblue") +
@@ -525,14 +657,16 @@ plot_NtoP_top = ggplot(filtered_flux_top, aes(x = TPP_Flux_mmolesP_m2_day, y = P
   geom_abline(slope = 16, intercept = 0, linetype = "dashed", color = "blue", linewidth = .7) +
   labs(x = "TPP Flux (mmmolP/m²/day)",
        y = "PON Flux (mmol/m²/day)",
-       title = "Nitrogen vs. Phosphorous Flux") +
+       title = "SBB Top: Nitrogen vs. Phosphorous Flux") +
   theme_minimal()
 plot_NtoP_top
 
 # linear model of Nitrogen vs. Phosphorous
 lm_NP_top = lm(PON_Flux_mmoles_m2_day ~ TPP_Flux_mmolesP_m2_day, data = filtered_flux_top)
 summary(lm_NP_top)
-# Ratio: 4.31034 (which is < than Redfield Ratio 16:1)
+# Ratio: 4.54656 (which is < than Redfield Ratio 16:1)
+# adjusted r-squared: 0.5447
+# p value = < 2.2e-16
 
 # facet wrapped by year (NtoP)
 NtoP_by_year = ggplot(filtered_flux_top, aes(x = TPP_Flux_mmolesP_m2_day, y = PON_Flux_mmoles_m2_day)) +
@@ -553,6 +687,55 @@ table_of_NP_year = filtered_flux_top %>%
 # the result of this code is a table that provides the intercept, slope (ratio), and p-values per year 
 table_of_NP_year
 
+table_of_NP_slope <- filtered_flux_top %>%
+  filter(!is.na(TPP_Flux_mmolesP_m2_day), !is.na(PON_Flux_mmoles_m2_day)) %>%
+  group_by(year) %>%
+  do(tidy(lm(PON_Flux_mmoles_m2_day ~ TPP_Flux_mmolesP_m2_day, data = .))) %>%
+  ungroup() %>%
+  filter(term == "TPP_Flux_mmolesP_m2_day") %>%
+  select(year,
+         slope = estimate,
+         pval_slope = p.value,
+         stderr_slope = std.error)
+table_of_NP_slope
+
+write.table(table_of_NP_slope, "clipboard", sep = "\t", row.names = FALSE)
+
+
+# Significance of Slopes
+
+# N:P Interaction Model
+model_interaction_N_P = lm(PON_Flux_mmoles_m2_day ~ TPP_Flux_mmolesP_m2_day * factor(year), data = filtered_flux_top)
+summary(model_interaction_N_P)
+
+model_no_interaction_N_P = lm(PON_Flux_mmoles_m2_day ~ TPP_Flux_mmolesP_m2_day + factor(year), data = filtered_flux_top)
+
+anova(model_no_interaction_N_P, model_interaction_N_P)
+# justified to move on? yes!
+
+# N:P Emmeans
+# get estimated slopes of POC ~ PON for each year.
+# Compare N:P ratios (as slopes) by year
+emtrends_N_P = emtrends(model_interaction_N_P, specs = "year", var = "TPP_Flux_mmolesP_m2_day")
+
+
+pairs(emtrends_N_P, adjust = "tukey")
+# this line of code... 1) Compares the C:N slopes between all pairs of years, 2) Tells you whether the difference in slope between (e.g.) 2010 and 2015 is statistically significant, 3) Adjusts the p-values to avoid false positives due to multiple comparisons
+
+pairs(emtrends_N_P, adjust = "tukey") %>%
+  as.data.frame() %>%
+  mutate(sig = case_when(
+    p.value < 0.001 ~ "***",
+    p.value < 0.01  ~ "**",
+    p.value < 0.05  ~ "*",
+    p.value < 0.1   ~ ".",
+    TRUE ~ ""
+  )) %>%
+  select(contrast, estimate, p.value, sig)
+
+intercept_emmeans_N_P = emmeans(model_interaction_N_P, specs = "year")
+pairs(intercept_emmeans_N_P, adjust = "tukey")  # pairwise intercept comparisons
+
 # plots of the ratio in the form of a line.
 # this adds another column of the C to P ratio.
 filtered_flux_top = filtered_flux_top %>%
@@ -562,7 +745,7 @@ filtered_flux_top = filtered_flux_top %>%
 NtoP_ratio_line = ggplot(filtered_flux_top, aes(x = Mid_Julian, y = N_to_P_ratio)) +
   geom_line() +
   geom_smooth(method = "loess") +
-  labs(title = "Time Series of N:P Flux Ratio",
+  labs(title = "SBB Top: N:P Flux Ratio Time Series",
        x = "Date", y = "N:P Ratio") +
   theme_minimal()
 NtoP_ratio_line
@@ -571,12 +754,343 @@ NtoP_ratio_line
 NtoP_ratio_boxplots = ggplot(filtered_flux_top, aes(x = as.factor(year), y = N_to_P_ratio)) +
   geom_boxplot(fill = "skyblue") +
   geom_hline(yintercept = 16, linetype = "dashed", color = "blue") +  # Redfield reference
-  labs(title = "N:P Flux Ratio by Year",
+  labs(title = "SBB Top: N:P Flux Ratio by Year Boxplots",
        x = "Year", y = "N:P Ratio") +
   theme_minimal()
 NtoP_ratio_boxplots
 
-###############
+##############################
+
+## PLOTS OF CARBON TO PHOSPHOROUS (PIP) ##
+
+# create a scatterplot with regression line and added slope line (106:1 = 106)
+plot_CtoPIP_top = ggplot(filtered_flux_top, aes(x = PIP_Flux_umolesP_m2_day / 1000, y = POC_Flux_mmoles_m2_day)) +
+  geom_point(color = "steelblue") +
+  geom_smooth(method = "lm", color = "darkred", se = TRUE)+
+  geom_abline(slope = 106, intercept = 0, linetype = "dashed", color = "blue", linewidth = .7) +
+  labs(x = "PIP Flux (mmolP/m²/day)",
+       y = "POC Flux (mmol/m²/day)",
+       title = "SBB Top: Carbon vs. PIP Flux") +
+  theme_minimal()
+plot_CtoPIP_top
+
+# Now refit with converted P units
+
+# this does the same as below (filters the data putting TPP into mmoles rather than umoles) but using tidy verse "mutate"
+filtered_flux_top = filtered_flux_top %>%
+  mutate(PIP_Flux_mmolesP_m2_day = PIP_Flux_umolesP_m2_day / 1000)
+
+# this does the same as above but with base R and '$' rather than tidy verse. 
+# filtered_flux_bot$TPP_Flux_mmolP_m2_day = filtered_flux_bot$TPP_Flux_umolesP_m2_day / 1000
+
+# linear model of Carbon vs. Phosphorous (PIP) (data is filtered first, units are converted)
+lm_C_PIP_top= lm(POC_Flux_mmoles_m2_day ~ PIP_Flux_mmolesP_m2_day , data = filtered_flux_top)
+summary(lm_C_PIP_top)
+# Ratio = 53.9167 (which is much < than Redfield Ratio of 106:1)
+# adjusted r-squared: 0.6318
+# p value = < 2.2e-16
+
+# facet wrapped by year (CtoP)
+CtoPIP_by_year = ggplot(filtered_flux_top, aes(x = PIP_Flux_mmolesP_m2_day, y = POC_Flux_mmoles_m2_day)) +
+  geom_point(color = "steelblue") +
+  geom_smooth(method = "lm", color = "darkred", se = TRUE) +
+  geom_abline(slope = 106, intercept = 0, linetype = "dashed", color = "blue", linewidth = 0.7) +
+  labs(x = "PIP Flux (mmolP/m²/day)",
+       y = "POC Flux (mmol/m²/day)",
+       title = "SBB Top Trap: Carbon vs. PIP Flux by Year") +
+  facet_wrap(~year) +
+  theme_minimal()
+CtoPIP_by_year
+
+# fitting models by group (CtoP)
+table_of_C_PIP_year = filtered_flux_top %>%
+  group_by(year) %>%
+  filter(!is.na(PIP_Flux_mmolesP_m2_day), !is.na(POC_Flux_mmoles_m2_day)) %>%
+  do(tidy(lm(POC_Flux_mmoles_m2_day ~ PIP_Flux_mmolesP_m2_day, data = .)))
+# the result of this code is a table that provides the intercept, slope (ratio), and p-values per year 
+table_of_C_PIP_year
+
+table_of_C_PIP_slope <- filtered_flux_top %>%
+  filter(!is.na(PIP_Flux_mmolesP_m2_day), !is.na(POC_Flux_mmoles_m2_day)) %>%
+  group_by(year) %>%
+  do(tidy(lm(POC_Flux_mmoles_m2_day ~ PIP_Flux_mmolesP_m2_day, data = .))) %>%
+  ungroup() %>%
+  filter(term == "PIP_Flux_mmolesP_m2_day") %>%
+  select(year,
+         slope = estimate,
+         pval_slope = p.value,
+         stderr_slope = std.error)
+table_of_C_PIP_slope
+
+write.table(table_of_C_PIP_slope, "clipboard", sep = "\t", row.names = FALSE)
+
+# plots of the ratio in the form of a line.
+# this adds another column of the C to P ratio.
+filtered_flux_top = filtered_flux_top %>%
+  mutate(C_to_PIP_ratio = POC_Flux_mmoles_m2_day / PIP_Flux_mmolesP_m2_day)
+
+# this actually plots the line graph. 
+CtoPIP_ratio_line = ggplot(filtered_flux_top, aes(x = Mid_Julian, y = C_to_PIP_ratio)) +
+  geom_line() +
+  geom_smooth(method = "loess") +
+  labs(title = "SBB Top: C:PIP Flux Ratio Time Series",
+       x = "Date", y = "C:PIP Ratio") +
+  theme_minimal()
+CtoPIP_ratio_line
+
+# plots the ratio in the form of a boxplot
+CtoPIP_ratio_boxplots = ggplot(filtered_flux_top, aes(x = as.factor(year), y = C_to_PIP_ratio)) +
+  geom_boxplot(fill = "skyblue") +
+  geom_hline(yintercept = 106, linetype = "dashed", color = "blue") +  # Redfield reference
+  labs(title = "SBB Top: C:PIP Flux Ratio by Year Boxplots",
+       x = "Year", y = "C:PIP Ratio") +
+  theme_minimal()
+CtoPIP_ratio_boxplots
+
+###############################
+
+## PLOTS OF CARBON TO PHOSPHOROUS (POP) ##
+
+# create a scatterplot with regression line and added slope line (106:1 = 106)
+plot_CtoPOP_top = ggplot(filtered_flux_top, aes(x = POP_Flux_umolesP_m2_day / 1000, y = POC_Flux_mmoles_m2_day)) +
+  geom_point(color = "steelblue") +
+  geom_smooth(method = "lm", color = "darkred", se = TRUE)+
+  geom_abline(slope = 106, intercept = 0, linetype = "dashed", color = "blue", linewidth = .7) +
+  labs(x = "POP Flux (mmolP/m²/day)",
+       y = "POC Flux (mmol/m²/day)",
+       title = "SBB Top: Carbon vs. POP Flux") +
+  theme_minimal()
+plot_CtoPOP_top
+
+# Now refit with converted P units
+
+# this does the same as below (filters the data putting TPP into mmoles rather than umoles) but using tidy verse "mutate"
+filtered_flux_top = filtered_flux_top %>%
+  mutate(POP_Flux_mmolesP_m2_day = POP_Flux_umolesP_m2_day / 1000)
+
+# this does the same as above but with base R and '$' rather than tidy verse. 
+# filtered_flux_bot$POP_Flux_mmolP_m2_day = filtered_flux_bot$POP_Flux_umolesP_m2_day / 1000
+
+# linear model of Carbon vs. Phosphorous (POP) (data is filtered first, units are converted)
+lm_C_POP_top= lm(POC_Flux_mmoles_m2_day ~ POP_Flux_mmolesP_m2_day , data = filtered_flux_top)
+summary(lm_C_POP_top)
+# Ratio = 28.8889 
+# adjusted r-squared: 0.1138
+# p value = < 2.2e-16
+
+# facet wrapped by year (CtoP)
+CtoPOP_by_year = ggplot(filtered_flux_top, aes(x = POP_Flux_mmolesP_m2_day, y = POC_Flux_mmoles_m2_day)) +
+  geom_point(color = "steelblue") +
+  geom_smooth(method = "lm", color = "darkred", se = TRUE) +
+  geom_abline(slope = 106, intercept = 0, linetype = "dashed", color = "blue", linewidth = 0.7) +
+  labs(x = "POP Flux (mmolP/m²/day)",
+       y = "POC Flux (mmol/m²/day)",
+       title = "SBB Top Trap: Carbon vs. POP Flux by Year") +
+  facet_wrap(~year) +
+  theme_minimal()
+CtoPOP_by_year
+
+# fitting models by group (CtoP)
+table_of_C_POP_year = filtered_flux_top %>%
+  group_by(year) %>%
+  filter(!is.na(POP_Flux_mmolesP_m2_day), !is.na(POC_Flux_mmoles_m2_day)) %>%
+  do(tidy(lm(POC_Flux_mmoles_m2_day ~ POP_Flux_mmolesP_m2_day, data = .)))
+# the result of this code is a table that provides the intercept, slope (ratio), and p-values per year 
+table_of_C_POP_year
+
+table_of_C_POP_slope <- filtered_flux_top %>%
+  filter(!is.na(POP_Flux_mmolesP_m2_day), !is.na(POC_Flux_mmoles_m2_day)) %>%
+  group_by(year) %>%
+  do(tidy(lm(POC_Flux_mmoles_m2_day ~ POP_Flux_mmolesP_m2_day, data = .))) %>%
+  ungroup() %>%
+  filter(term == "POP_Flux_mmolesP_m2_day") %>%
+  select(year,
+         slope = estimate,
+         pval_slope = p.value,
+         stderr_slope = std.error)
+table_of_C_POP_slope
+
+write.table(table_of_C_POP_slope, "clipboard", sep = "\t", row.names = FALSE)
+
+# plots of the ratio in the form of a line.
+# this adds another column of the C to POP ratio.
+filtered_flux_top = filtered_flux_top %>%
+  mutate(C_to_POP_ratio = POC_Flux_mmoles_m2_day / POP_Flux_mmolesP_m2_day)
+
+# this actually plots the line graph. 
+CtoPOP_ratio_line = ggplot(filtered_flux_top, aes(x = Mid_Julian, y = C_to_POP_ratio)) +
+  geom_line() +
+  geom_smooth(method = "loess") +
+  labs(title = "SBB Top: C:POP Flux Ratio Time Series",
+       x = "Date", y = "C:POP Ratio") +
+  theme_minimal()
+CtoPOP_ratio_line
+
+# plots the ratio in the form of a boxplot
+CtoPOP_ratio_boxplots = ggplot(filtered_flux_top, aes(x = as.factor(year), y = C_to_POP_ratio)) +
+  geom_boxplot(fill = "skyblue") +
+  geom_hline(yintercept = 106, linetype = "dashed", color = "blue") +  # Redfield reference
+  labs(title = "SBB Top: C:POP Flux Ratio by Year Boxplots",
+       x = "Year", y = "C:POP Ratio") +
+  theme_minimal()
+CtoPOP_ratio_boxplots
+
+## PLOTS OF NITROGEN TO PHOSPHOROUS (PIP) ##
+
+# create a scatterplot with regression line and added slope line (16:1 = 16)
+plot_NtoPIP_top = ggplot(filtered_flux_top, aes(x = PIP_Flux_mmolesP_m2_day, y = PON_Flux_mmoles_m2_day)) +
+  geom_point(color = "steelblue") +
+  geom_smooth(method = "lm", color = "darkred", se = TRUE)+
+  geom_abline(slope = 16, intercept = 0, linetype = "dashed", color = "blue", linewidth = .7) +
+  labs(x = "PIP Flux (mmmolP/m²/day)",
+       y = "PON Flux (mmol/m²/day)",
+       title = "SBB Top: Nitrogen vs. PIP Flux") +
+  theme_minimal()
+plot_NtoPIP_top
+
+# linear model of Nitrogen vs. Phosphorous
+lm_N_PIP_top = lm(PON_Flux_mmoles_m2_day ~ PIP_Flux_mmolesP_m2_day, data = filtered_flux_top)
+summary(lm_N_PIP_top)
+# Ratio: 6.66542 (which is < than Redfield Ratio 16:1)
+# adjusted r-squared: 0.6089
+# p value = < 2.2e-16
+
+# facet wrapped by year (NtoP)
+NtoPIP_by_year = ggplot(filtered_flux_top, aes(x = PIP_Flux_mmolesP_m2_day, y = PON_Flux_mmoles_m2_day)) +
+  geom_point(color = "steelblue") +
+  geom_smooth(method = "lm", color = "darkred", se = TRUE) +
+  geom_abline(slope = 16, intercept = 0, linetype = "dashed", color = "blue", linewidth = 0.7) +
+  labs(x = "PIP Flux (mmolP/m²/day)",
+       y = "PON Flux (mmol/m²/day)",
+       title = "SBB Top Trap: Nitrogen vs. PIP Flux by Year") +
+  facet_wrap(~year) +
+  theme_minimal()
+NtoPIP_by_year
+
+table_of_N_PIP_year = filtered_flux_top %>%
+  group_by(year) %>%
+  filter(!is.na(PIP_Flux_mmolesP_m2_day), !is.na(PON_Flux_mmoles_m2_day)) %>%
+  do(tidy(lm(PON_Flux_mmoles_m2_day ~ PIP_Flux_mmolesP_m2_day, data = .)))
+# the result of this code is a table that provides the intercept, slope (ratio), and p-values per year 
+table_of_N_PIP_year
+
+table_of_N_PIP_slope <- filtered_flux_top %>%
+  filter(!is.na(PIP_Flux_mmolesP_m2_day), !is.na(PON_Flux_mmoles_m2_day)) %>%
+  group_by(year) %>%
+  do(tidy(lm(PON_Flux_mmoles_m2_day ~ PIP_Flux_mmolesP_m2_day, data = .))) %>%
+  ungroup() %>%
+  filter(term == "PIP_Flux_mmolesP_m2_day") %>%
+  select(year,
+         slope = estimate,
+         pval_slope = p.value,
+         stderr_slope = std.error)
+table_of_N_PIP_slope
+
+write.table(table_of_N_PIP_slope, "clipboard", sep = "\t", row.names = FALSE)
+
+# plots of the ratio in the form of a line.
+# this adds another column of the C to P ratio.
+filtered_flux_top = filtered_flux_top %>%
+  mutate(N_to_PIP_ratio = PON_Flux_mmoles_m2_day / PIP_Flux_mmolesP_m2_day) 
+
+# this actually plots the line graph. 
+NtoPIP_ratio_line = ggplot(filtered_flux_top, aes(x = Mid_Julian, y = N_to_PIP_ratio)) +
+  geom_line() +
+  geom_smooth(method = "loess") +
+  labs(title = "SBB Top: N:PIP Flux Ratio Time Series",
+       x = "Date", y = "N:PIP Ratio") +
+  theme_minimal()
+NtoPIP_ratio_line
+
+# plots the ratio in the form of a boxplot
+NtoPIP_ratio_boxplots = ggplot(filtered_flux_top, aes(x = as.factor(year), y = N_to_PIP_ratio)) +
+  geom_boxplot(fill = "skyblue") +
+  geom_hline(yintercept = 16, linetype = "dashed", color = "blue") +  # Redfield reference
+  labs(title = "SBB Top: N:PIP Flux Ratio by Year Boxplots",
+       x = "Year", y = "N:PIP Ratio") +
+  theme_minimal()
+NtoPIP_ratio_boxplots
+
+
+## PLOTS OF NITROGEN TO PHOSPHOROUS (POP) ##
+
+# create a scatterplot with regression line and added slope line (16:1 = 16)
+plot_NtoPOP_top = ggplot(filtered_flux_top, aes(x = POP_Flux_mmolesP_m2_day, y = PON_Flux_mmoles_m2_day)) +
+  geom_point(color = "steelblue") +
+  geom_smooth(method = "lm", color = "darkred", se = TRUE)+
+  geom_abline(slope = 16, intercept = 0, linetype = "dashed", color = "blue", linewidth = .7) +
+  labs(x = "POP Flux (mmmolP/m²/day)",
+       y = "PON Flux (mmol/m²/day)",
+       title = "SBB Top: Nitrogen vs. POP Flux") +
+  theme_minimal()
+plot_NtoPOP_top
+
+# linear model of Nitrogen vs. POP
+lm_N_POP_top = lm(PON_Flux_mmoles_m2_day ~ POP_Flux_mmolesP_m2_day, data = filtered_flux_top)
+summary(lm_N_POP_top)
+# Ratio: 3.8907 (which is < than Redfield Ratio 16:1)
+# adjusted r-squared: 0.1273
+# p value = < 2.2e-16
+
+# facet wrapped by year (NtoP)
+NtoPOP_by_year = ggplot(filtered_flux_top, aes(x = POP_Flux_mmolesP_m2_day, y = PON_Flux_mmoles_m2_day)) +
+  geom_point(color = "steelblue") +
+  geom_smooth(method = "lm", color = "darkred", se = TRUE) +
+  geom_abline(slope = 16, intercept = 0, linetype = "dashed", color = "blue", linewidth = 0.7) +
+  labs(x = "POP Flux (mmolP/m²/day)",
+       y = "PON Flux (mmol/m²/day)",
+       title = "SBB Top Trap: Nitrogen vs. POP Flux by Year") +
+  facet_wrap(~year) +
+  theme_minimal()
+NtoPOP_by_year
+
+table_of_N_POP_year = filtered_flux_top %>%
+  group_by(year) %>%
+  filter(!is.na(POP_Flux_mmolesP_m2_day), !is.na(PON_Flux_mmoles_m2_day)) %>%
+  do(tidy(lm(PON_Flux_mmoles_m2_day ~ POP_Flux_mmolesP_m2_day, data = .)))
+# the result of this code is a table that provides the intercept, slope (ratio), and p-values per year 
+table_of_N_POP_year
+
+table_of_N_POP_slope <- filtered_flux_top %>%
+  filter(!is.na(POP_Flux_mmolesP_m2_day), !is.na(PON_Flux_mmoles_m2_day)) %>%
+  group_by(year) %>%
+  do(tidy(lm(PON_Flux_mmoles_m2_day ~ POP_Flux_mmolesP_m2_day, data = .))) %>%
+  ungroup() %>%
+  filter(term == "POP_Flux_mmolesP_m2_day") %>%
+  select(year,
+         slope = estimate,
+         pval_slope = p.value,
+         stderr_slope = std.error)
+table_of_N_POP_slope
+
+write.table(table_of_N_POP_slope, "clipboard", sep = "\t", row.names = FALSE)
+
+# plots of the ratio in the form of a line.
+# this adds another column of the C to P ratio.
+filtered_flux_top = filtered_flux_top %>%
+  mutate(N_to_POP_ratio = PON_Flux_mmoles_m2_day / POP_Flux_mmolesP_m2_day) 
+
+# this actually plots the line graph. 
+NtoPOP_ratio_line = ggplot(filtered_flux_top, aes(x = Mid_Julian, y = N_to_POP_ratio)) +
+  geom_line() +
+  geom_smooth(method = "loess") +
+  labs(title = "SBB Top: N:POP Flux Ratio Time Series",
+       x = "Date", y = "N:POP Ratio") +
+  theme_minimal()
+NtoPOP_ratio_line
+
+# plots the ratio in the form of a boxplot
+NtoPOP_ratio_boxplots = ggplot(filtered_flux_top, aes(x = as.factor(year), y = N_to_POP_ratio)) +
+  geom_boxplot(fill = "skyblue") +
+  geom_hline(yintercept = 16, linetype = "dashed", color = "blue") +  # Redfield reference
+  labs(title = "SBB Top: N:POP Flux Ratio by Year Boxplots",
+       x = "Year", y = "N:POP Ratio") +
+  theme_minimal()
+NtoPOP_ratio_boxplots
+
+
+###################################
+###################################
 
 # Overall, this code helps us pull out specific outliers and puts them into a table so that we can then identify outliers. 
 
@@ -691,6 +1205,8 @@ outlier_table <- flux_outlier_joined %>%
   filter(is_outlier == TRUE) %>%
   arrange(variable, Mid_Julian)
 
+write.table(outlier_table, "clipboard", sep = "\t", row.names = FALSE)
+
 # Summary: 
 # pivot_longer()- reshapes the wide columns into a long format
 # sub("_outlier","", ...)- aligns the variable names for joining.
@@ -703,6 +1219,38 @@ outlier_table <- flux_outlier_joined %>%
 
 ## Now pull out monthly outliers rather than just "global" outliers.
 
+# Creates new empty monthly outlier data frames
+outlier_flags_month <- data.frame(Mid_Julian = all_data_outliers$Mid_Julian)
+outlier_type_flags_month <- data.frame(Mid_Julian = all_data_outliers$Mid_Julian)
+
+for (var in flux_variables) {
+  if (var %in% names(all_data_outliers)) {
+    outlier_flags_month[[paste0(var, "_outlier_month")]] <- NA
+    outlier_type_flags_month[[paste0(var, "_outlier_type_month")]] <- NA
+    
+    for (m in unique(all_data_outliers$Month)) {
+      month_rows <- all_data_outliers$Month == m
+      values <- all_data_outliers[[var]][month_rows]
+      
+      if (all(is.na(values))) next
+      
+      Q1 <- quantile(values, 0.25, na.rm = TRUE)
+      Q3 <- quantile(values, 0.75, na.rm = TRUE)
+      IQR <- Q3 - Q1
+      lower <- Q1 - 1.5 * IQR
+      upper <- Q3 + 1.5 * IQR
+      
+      is_outlier_month <- values < lower | values > upper
+      outlier_type_month <- ifelse(values < lower, "low",
+                                   ifelse(values > upper, "high", NA))
+      
+      outlier_flags_month[[paste0(var, "_outlier_month")]][month_rows] <- is_outlier_month
+      outlier_type_flags_month[[paste0(var, "_outlier_type_month")]][month_rows] <- outlier_type_month
+    }
+  }
+}
+
+# Pivots the month outlier flags: 
 
 
 ##############################################
