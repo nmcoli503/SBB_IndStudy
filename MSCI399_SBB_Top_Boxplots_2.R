@@ -438,7 +438,7 @@ table_of_CN_year = filtered_flux_top %>%
 # the result of this code is a table that provides the intercept, slope (ratio), and p-values per year 
 table_of_CN_year
 
-table_of_CN_slope <- filtered_flux_top %>%
+table_of_CN_slope = filtered_flux_top %>%
   filter(!is.na(POC_Flux_mmoles_m2_day), !is.na(PON_Flux_mmoles_m2_day)) %>%
   group_by(year) %>%
   do(tidy(lm(POC_Flux_mmoles_m2_day ~ PON_Flux_mmoles_m2_day, data = .))) %>%
@@ -484,21 +484,40 @@ pairs(emtrends_C_N, adjust = "tukey") %>%
   )) %>%
   select(contrast, estimate, p.value, sig)
 
-intercept_emmeans_C_N = emmeans(model_interaction_C_N, specs = "year")
-pairs(intercept_emmeans_C_N, adjust = "tukey")  # pairwise intercept comparisons
+plot_data_CN = as.data.frame(emtrends_C_N)
 
-
-plot_data = as.data.frame(emtrends_C_N)
-
-ggplot(plot_data, aes(x = year, y = estimate)) +
+POC_PON_slope_graph = ggplot(plot_data_CN, aes(x = year, y = PON_Flux_mmoles_m2_day.trend)) +
   geom_point(size = 3) +
-  geom_errorbar(aes(ymin = estimate - SE, ymax = estimate + SE), width = 0.2) +
+  geom_errorbar(aes(ymin = PON_Flux_mmoles_m2_day.trend - SE,
+                    ymax = PON_Flux_mmoles_m2_day.trend + SE),
+                width = 0.2) +
   ylab("C:N Ratio (Slope of POC ~ PON)") +
   xlab("Year") +
-  theme_minimal() +
-  ggtitle("Estimated C:N Slopes by Year") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  ggtitle("Estimated C:N Ratio by Year") +
+  theme_minimal()
+POC_PON_slope_graph
 
+library(reshape2)
+
+sig_table_CN = pairs(emtrends_C_N, adjust = "tukey") %>%
+  as.data.frame() %>%
+  separate(contrast, into = c("year1", "year2"), sep = " - ") %>%
+  mutate(sig_level = case_when(
+    p.value < 0.001 ~ "***",
+    p.value < 0.01  ~ "**",
+    p.value < 0.05  ~ "*",
+    p.value < 0.1   ~ ".",
+    TRUE ~ ""
+  ))
+
+# Convert to wide matrix for heatmap
+heat_matrix_CN = sig_table_CN %>%
+  select(year1, year2, sig_level) %>%
+  spread(year2, sig_level)
+
+write.table(heat_matrix_CN, "clipboard", sep = "\t", row.names = FALSE)
+
+# View as a table or with gt/table styling
 
 # plots of the ratio in the form of a line.
 # this adds another column of the C to N ratio.
@@ -619,9 +638,36 @@ pairs(emtrends_C_P, adjust = "tukey") %>%
   )) %>%
   select(contrast, estimate, p.value, sig)
 
-intercept_emmeans_C_P = emmeans(model_interaction_C_P, specs = "year")
-pairs(intercept_emmeans_C_P, adjust = "tukey")  # pairwise intercept comparisons
+plot_data_CP = as.data.frame(emtrends_C_P)
 
+POC_TPP_slope_graph = ggplot(plot_data_CP, aes(x = year, y = TPP_Flux_mmolesP_m2_day.trend)) +
+  geom_point(size = 3) +
+  geom_errorbar(aes(ymin = TPP_Flux_mmolesP_m2_day.trend - SE,
+                    ymax = TPP_Flux_mmolesP_m2_day.trend + SE),
+                width = 0.2) +
+  ylab("C:P Ratio (Slope of POC ~ TPP)") +
+  xlab("Year") +
+  ggtitle("Estimated C:P Ratio by Year") +
+  theme_minimal()
+POC_TPP_slope_graph
+
+sig_table_CP <- pairs(emtrends_C_P, adjust = "tukey") %>%
+  as.data.frame() %>%
+  separate(contrast, into = c("year1", "year2"), sep = " - ") %>%
+  mutate(sig_level = case_when(
+    p.value < 0.001 ~ "***",
+    p.value < 0.01  ~ "**",
+    p.value < 0.05  ~ "*",
+    p.value < 0.1   ~ ".",
+    TRUE ~ ""
+  ))
+
+# Convert to wide matrix for heatmap
+heat_matrix_CP = sig_table_CP %>%
+  select(year1, year2, sig_level) %>%
+  spread(year2, sig_level)
+
+write.table(heat_matrix_CP, "clipboard", sep = "\t", row.names = FALSE)
 
 # plots of the ratio in the form of a line.
 # this adds another column of the C to P ratio.
@@ -701,7 +747,6 @@ table_of_NP_slope
 
 write.table(table_of_NP_slope, "clipboard", sep = "\t", row.names = FALSE)
 
-
 # Significance of Slopes
 
 # N:P Interaction Model
@@ -733,8 +778,37 @@ pairs(emtrends_N_P, adjust = "tukey") %>%
   )) %>%
   select(contrast, estimate, p.value, sig)
 
-intercept_emmeans_N_P = emmeans(model_interaction_N_P, specs = "year")
-pairs(intercept_emmeans_N_P, adjust = "tukey")  # pairwise intercept comparisons
+plot_data_NP = as.data.frame(emtrends_N_P)
+
+PON_TPP_slope_graph = ggplot(plot_data_NP, aes(x = year, y = TPP_Flux_mmolesP_m2_day.trend)) +
+  geom_point(size = 3) +
+  geom_errorbar(aes(ymin = TPP_Flux_mmolesP_m2_day.trend - SE,
+                    ymax = TPP_Flux_mmolesP_m2_day.trend + SE),
+                width = 0.2) +
+  ylab("N:P Ratio (Slope of PON ~ TPP)") +
+  xlab("Year") +
+  ggtitle("Estimated N:P Ratio by Year") +
+  theme_minimal()
+PON_TPP_slope_graph
+
+sig_table_NP = pairs(emtrends_N_P, adjust = "tukey") %>%
+  as.data.frame() %>%
+  separate(contrast, into = c("year1", "year2"), sep = " - ") %>%
+  mutate(sig_level = case_when(
+    p.value < 0.001 ~ "***",
+    p.value < 0.01  ~ "**",
+    p.value < 0.05  ~ "*",
+    p.value < 0.1   ~ ".",
+    TRUE ~ ""
+  ))
+
+# Convert to wide matrix for heatmap
+heat_matrix_NP = sig_table_NP %>%
+  select(year1, year2, sig_level) %>%
+  spread(year2, sig_level)
+
+write.table(heat_matrix_NP, "clipboard", sep = "\t", row.names = FALSE)
+
 
 # plots of the ratio in the form of a line.
 # this adds another column of the C to P ratio.
@@ -1141,7 +1215,6 @@ for (var in flux_variables) {
   }
 }
 
-
 #  STEP 5. Pivot the wide-format data to a long format. (excluding the date column)
 # this takes the selected flux columns and "stacks" them into two columns 1) variable: the name of the flux/column name and 2) value: the actual number for that variable
 
@@ -1220,42 +1293,176 @@ write.table(outlier_table, "clipboard", sep = "\t", row.names = FALSE)
 ## Now pull out monthly outliers rather than just "global" outliers.
 
 # Creates new empty monthly outlier data frames
-outlier_flags_month <- data.frame(Mid_Julian = all_data_outliers$Mid_Julian)
-outlier_type_flags_month <- data.frame(Mid_Julian = all_data_outliers$Mid_Julian)
+#outlier_flags_month <- data.frame(Mid_Julian = all_data_outliers$Mid_Julian)
+#outlier_type_flags_month <- data.frame(Mid_Julian = all_data_outliers$Mid_Julian)
 
-for (var in flux_variables) {
-  if (var %in% names(all_data_outliers)) {
-    outlier_flags_month[[paste0(var, "_outlier_month")]] <- NA
-    outlier_type_flags_month[[paste0(var, "_outlier_type_month")]] <- NA
+#for (var in flux_variables) {
+ # if (var %in% names(all_data_outliers)) {
+  #  outlier_flags_month[[paste0(var, "_outlier_month")]] <- NA
+   # outlier_type_flags_month[[paste0(var, "_outlier_type_month")]] <- NA
     
-    for (m in unique(all_data_outliers$Month)) {
-      month_rows <- all_data_outliers$Month == m
-      values <- all_data_outliers[[var]][month_rows]
+    #for (m in unique(all_data_outliers$Month)) {
+     # month_rows <- all_data_outliers$Month == m
+      #values <- all_data_outliers[[var]][month_rows]
       
-      if (all(is.na(values))) next
+     #if (all(is.na(values))) next
       
-      Q1 <- quantile(values, 0.25, na.rm = TRUE)
-      Q3 <- quantile(values, 0.75, na.rm = TRUE)
-      IQR <- Q3 - Q1
-      lower <- Q1 - 1.5 * IQR
-      upper <- Q3 + 1.5 * IQR
+     #Q1 <- quantile(values, 0.25, na.rm = TRUE)
+      #Q3 <- quantile(values, 0.75, na.rm = TRUE)
+      #IQR <- Q3 - Q1
+      #lower <- Q1 - 1.5 * IQR
+      #upper <- Q3 + 1.5 * IQR
       
-      is_outlier_month <- values < lower | values > upper
-      outlier_type_month <- ifelse(values < lower, "low",
-                                   ifelse(values > upper, "high", NA))
+     # is_outlier_month <- values < lower | values > upper
+    # outlier_type_month <- ifelse(values < lower, "low",
+                    #               ifelse(values > upper, "high", NA))
       
-      outlier_flags_month[[paste0(var, "_outlier_month")]][month_rows] <- is_outlier_month
-      outlier_type_flags_month[[paste0(var, "_outlier_type_month")]][month_rows] <- outlier_type_month
-    }
-  }
-}
+     # outlier_flags_month[[paste0(var, "_outlier_month")]][month_rows] <- is_outlier_month
+     # outlier_type_flags_month[[paste0(var, "_outlier_type_month")]][month_rows] <- outlier_type_month
+#    }
+#  }
+#}
 
 # Pivots the month outlier flags: 
 
+#######################
+###################### 
+
+# Normalizing the Data to tease out ratios:
+
+
+### NOTE: look into summary flux C:N:P deviations vs individual summary flux deviations. 
+
+## For CARBON
+
+# Step 1
+carbon_normal_mean = mean(filtered_flux_top$POC_Flux_mmoles_m2_day, na.rm = TRUE)
+
+# Step 2: Create a new column with the normalized (centered) carbon flux
+filtered_flux_top = filtered_flux_top %>%
+  mutate(POC_Flux_centered = POC_Flux_mmoles_m2_day - carbon_normal_mean)
+
+# Step 3: Calculate yearly mean and percent deviation
+summary_flux_POC = filtered_flux_top %>%
+  group_by(year) %>%
+  summarise(
+    yearly_mean_POC = mean(POC_Flux_mmoles_m2_day, na.rm = TRUE),
+    mean_centered_flux_POC = yearly_mean_POC - carbon_normal_mean,
+    percent_deviation_POC = ((yearly_mean_POC - carbon_normal_mean) / carbon_normal_mean) * 100
+  )
+
+# Step 4: Normalized Bar Graph
+ggplot(summary_flux_POC, aes(x = factor(year), y = mean_centered_flux_POC, fill = mean_centered_flux_POC > 0)) +
+  geom_col(width = 0.7) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
+  scale_fill_manual(values = c("tomato", "seagreen"), guide = "none") +
+  labs(
+    title = "Mean-Centered POC Flux by Year",
+    x = "Year",
+    y = "Centered POC Flux (mmol/m²/day)"
+  ) +
+  theme_minimal()
+
+# Step 5: Percent Deviation Graph
+ggplot(summary_flux_POC, aes(x = factor(year), y = percent_deviation_POC, fill = percent_deviation_POC > 0)) +
+  geom_col(width = 0.7) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
+  scale_fill_manual(values = c("firebrick", "darkgreen"), guide = "none") +
+  labs(
+    title = "Percent Deviation of POC Flux from Overall Mean",
+    x = "Year",
+    y = "Percent Deviation (%)"
+  ) +
+  theme_minimal()
+
+summary_flux %>% filter(year == 2011) %>%
+  select(year, C_dev, N_dev)
+
+# For NITROGEN
+
+# Step 1
+nitrogen_normal_mean = mean(filtered_flux_top$PON_Flux_mmoles_m2_day, na.rm = TRUE)
+
+# Step 2: Create a new column with the normalized (centered) carbon flux
+filtered_flux_top = filtered_flux_top %>%
+  mutate(PON_Flux_centered = PON_Flux_mmoles_m2_day - nitrogen_normal_mean)
+
+# Step 3: Calculate yearly mean and percent deviation
+summary_flux_PON = filtered_flux_top %>%
+  group_by(year) %>%
+  summarise(
+    yearly_mean_PON = mean(PON_Flux_mmoles_m2_day, na.rm = TRUE),
+    mean_centered_flux_PON = yearly_mean_PON - nitrogen_normal_mean,
+    percent_deviation_PON = ((yearly_mean_PON - nitrogen_normal_mean) / nitrogen_normal_mean) * 100
+  )
+
+# Step 4: Normalized Bar Graph
+ggplot(summary_flux_PON, aes(x = factor(year), y = mean_centered_flux_PON, fill = mean_centered_flux_PON > 0)) +
+  geom_col(width = 0.7) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
+  scale_fill_manual(values = c("tomato", "seagreen"), guide = "none") +
+  labs(
+    title = "Mean-Centered PON Flux by Year",
+    x = "Year",
+    y = "Centered PON Flux (mmol/m²/day)"
+  ) +
+  theme_minimal()
+
+# Step 5: Percent Deviation Graph
+ggplot(summary_flux_PON, aes(x = factor(year), y = percent_deviation_PON, fill = percent_deviation_PON > 0)) +
+  geom_col(width = 0.7) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
+  scale_fill_manual(values = c("firebrick", "darkgreen"), guide = "none") +
+  labs(
+    title = "Percent Deviation of PON Flux from Overall Mean",
+    x = "Year",
+    y = "Percent Deviation (%)"
+  ) +
+  theme_minimal()
+
+# For PHOSPHORUS
+
+# Step 1
+phosphorus_normal_mean = mean(filtered_flux_top$TPP_Flux_umolesP_m2_day, na.rm = TRUE)
+
+# Step 2: Create a new column with the normalized (centered) carbon flux
+filtered_flux_top = filtered_flux_top %>%
+  mutate(TPP_Flux_centered = TPP_Flux_umolesP_m2_day - phosphorus_normal_mean)
+
+# Step 3: Calculate yearly mean and percent deviation
+summary_flux_TPP = filtered_flux_top %>%
+  group_by(year) %>%
+  summarise(
+    yearly_mean_TPP = mean(TPP_Flux_umolesP_m2_day, na.rm = TRUE),
+    mean_centered_flux_TPP = yearly_mean_TPP - phosphorus_normal_mean,
+    percent_deviation_TPP = ((yearly_mean_TPP - phosphorus_normal_mean) / phosphorus_normal_mean) * 100
+  )
+
+# Step 4: Normalized Bar Graph
+ggplot(summary_flux_TPP, aes(x = factor(year), y = mean_centered_flux_TPP, fill = mean_centered_flux_TPP > 0)) +
+  geom_col(width = 0.7) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
+  scale_fill_manual(values = c("tomato", "seagreen"), guide = "none") +
+  labs(
+    title = "Mean-Centered TPP Flux by Year",
+    x = "Year",
+    y = "Centered TPP Flux (umolP/m²/day)"
+  ) +
+  theme_minimal()
+
+# Step 5: Percent Deviation Graph
+ggplot(summary_flux_TPP, aes(x = factor(year), y = percent_deviation_TPP, fill = percent_deviation_TPP > 0)) +
+  geom_col(width = 0.7) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
+  scale_fill_manual(values = c("firebrick", "darkgreen"), guide = "none") +
+  labs(
+    title = "Percent Deviation of TPP Flux from Overall Mean",
+    x = "Year",
+    y = "Percent Deviation (%)"
+  ) +
+  theme_minimal()
 
 ##############################################
-
-### I don't think any of this works, right below ###
 
 ## Experimenting with Time Series of Total Mass Flux ##
 
